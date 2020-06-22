@@ -6,6 +6,6 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.gobars/xlsx/badge.svg?style=flat-square)](https://maven-badges.herokuapp.com/maven-central/com.github.gobars/xlsx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-binding between java beans and exccel rows based on poi
+binding between java beans and excel rows based on poi.
 
 ## Usage

@@ -29,7 +29,7 @@ public class XlsxTest {
 
     String excel = "excels/test-rowsbean2.xlsx";
 
-    new Xlsx().template("rowsbean2-template.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
+    new Xlsx().styleXlsx("rowsbean2-style.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
 
     List<RowBean2> read = new Xlsx().read(excel).toBeans(RowBean2.class);
 
@@ -44,7 +44,7 @@ public class XlsxTest {
 
     String excel = "excels/test-rowsbean3.xlsx";
 
-    new Xlsx().template("rowsbean2-template.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
+    new Xlsx().styleXlsx("rowsbean2-style.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
 
     List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
 
