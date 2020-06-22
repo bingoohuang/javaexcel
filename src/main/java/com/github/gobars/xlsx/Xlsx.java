@@ -283,10 +283,10 @@ public class Xlsx implements Closeable {
     }
 
     FieldInfo fi = new FieldInfo();
-    fieldInfos.put(field, fi);
-
     FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
     fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(title);
+
+    fieldInfos.put(field, fi);
 
     if (styleWorkbook == null) {
       return;
@@ -311,10 +311,10 @@ public class Xlsx implements Closeable {
 
   private void prepareFieldInfos(Map<TitleInfo, FieldInfo> fieldInfos, TitleInfo field) {
     FieldInfo fi = new FieldInfo();
-    fieldInfos.put(field, fi);
-
     FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
     fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(field.title());
+
+    fieldInfos.put(field, fi);
   }
 
   private <T> FieldInfo getFirstFieldInfo(Map<T, FieldInfo> fieldInfos) {

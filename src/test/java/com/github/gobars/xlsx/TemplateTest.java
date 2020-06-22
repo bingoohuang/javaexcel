@@ -45,7 +45,7 @@ public class TemplateTest {
         .templateXlsx("template-horizontal.xlsx", FileType.CLASSPATH)
         .fromBeans(beans, new FromOption().horizontal(true))
         .protect("123456")
-        .write("excels/test-123456.xlsx");
+        .write("excels/test-horizontal-123456.xlsx");
 
     String excel = "excels/test-horizontal.xlsx";
     new Xlsx()
