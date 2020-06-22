@@ -20,7 +20,7 @@ public class TemplateTest {
 
     String excel = "excels/test-template.xlsx";
 
-    new Xlsx().templateXlsx("template.xlsx", FileType.CLASSPATH).fromBeans(beans).write(excel);
+    new Xlsx().template("template.xlsx", FileType.CLASSPATH).fromBeans(beans).write(excel);
 
     List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
 
@@ -30,30 +30,17 @@ public class TemplateTest {
   @Test
   public void horizontal() {
     List<TitleBean> beans = new ArrayList<>();
-    beans.add(new TitleBean().title("地区").sample("示例-海淀区").data1("西城").data2("东城").data3("南城"));
-    beans.add(
-        new TitleBean()
-            .title("血压")
-            .sample("示例-140/90")
-            .data1("135/90")
-            .data2("140/95")
-            .data3("133/85"));
-    beans.add(new TitleBean().title("性别").sample("示例-女").data1("男").data2("女").data3("未知"));
-    beans.add(new TitleBean().title("学校").sample("示例-蓝翔").data1("东大").data2("西大").data3("北大"));
+    beans.add(new TitleBean().title("地区").sample("示例-海淀区").d1("西城").d2("东城").d3("南城"));
+    beans.add(new TitleBean().title("血压").sample("示例-140/90").d1("135/90").d2("140/95").d3("133/85"));
+    beans.add(new TitleBean().title("性别").sample("示例-女").d1("男").d2("女").d3("未知"));
+    beans.add(new TitleBean().title("学校").sample("示例-蓝翔").d1("东大").d2("西大").d3("北大"));
 
     new Xlsx()
-        .templateXlsx("template-horizontal.xlsx", FileType.CLASSPATH)
+        .template("template-horizontal.xlsx", FileType.CLASSPATH)
         .fromBeans(beans, new FromOption().horizontal(true))
-        .protect("123456")
-        .write("excels/test-horizontal-123456.xlsx");
+        .write("excels/test-horizontal.xlsx");
 
-    String excel = "excels/test-horizontal.xlsx";
-    new Xlsx()
-        .templateXlsx("template-horizontal.xlsx", FileType.CLASSPATH)
-        .fromBeans(beans, new FromOption().horizontal(true))
-        .write(excel);
-
-    List<HorizontalBean> read = new Xlsx().read(excel).toBeans(HorizontalBean.class);
+    List<HorizontalBean> read = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(HorizontalBean.class);
     assertThat(read)
         .containsExactly(
             new HorizontalBean().area("示例-海淀区").blood("示例-140/90").gender("示例-女").school("示例-蓝翔"),
@@ -67,13 +54,19 @@ public class TemplateTest {
     titleInfos.add(new TitleInfo().title("学校").mapKey("school"));
     titleInfos.add(new TitleInfo().title("血压").mapKey("blood"));
 
-    List<Map<String, String>> maps = new Xlsx().read(excel).toBeans(titleInfos);
+    List<Map<String, String>> maps = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(titleInfos);
     assertThat(maps)
         .containsExactly(
             mapOf("area", "示例-海淀区", "blood", "示例-140/90", "gender", "示例-女", "school", "示例-蓝翔"),
             mapOf("area", "西城", "blood", "135/90", "gender", "男", "school", "东大"),
             mapOf("area", "东城", "blood", "140/95", "gender", "女", "school", "西大"),
             mapOf("area", "南城", "blood", "133/85", "gender", "未知", "school", "北大"));
+
+    new Xlsx()
+            .template("template-horizontal.xlsx", FileType.CLASSPATH)
+            .fromBeans(beans, new FromOption().horizontal(true))
+            .protect("123456")
+            .write("excels/test-horizontal-123456.xlsx");
   }
 
   private Map<String, String> mapOf(String... values) {
@@ -106,13 +99,13 @@ public class TemplateTest {
   @Accessors(fluent = true)
   public static class TitleBean {
     @XlsxCol(title = "数据1")
-    private String data1;
+    private String d1;
 
     @XlsxCol(title = "数据2")
-    private String data2;
+    private String d2;
 
     @XlsxCol(title = "数据3")
-    private String data3;
+    private String d3;
 
     @XlsxCol(title = "标题")
     private String title;

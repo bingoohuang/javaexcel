@@ -9,3 +9,70 @@
 binding between java beans and excel rows based on poi.
 
 ## Usage
+
+### JavaBean读取
+
+1. 定义读取JavaBean
+
+```java
+@Data
+@Accessors(fluent = true)
+public static class Bean {
+    @XlsxCol(title = "地区") private String area;
+    @XlsxCol(title = "血压") private String blood;
+    @XlsxCol(title = "性别") private String gender;
+    @XlsxCol(title = "学校") private String school;
+}
+```
+
+2. 读取
+
+```java
+List<Bean> read = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(Bean.class);
+```
+
+### Map列表读取
+
+```java
+List<TitleInfo> titleInfos = new ArrayList<>();
+titleInfos.add(new TitleInfo().title("地区").mapKey("area"));
+titleInfos.add(new TitleInfo().title("性别").mapKey("gender"));
+titleInfos.add(new TitleInfo().title("学校").mapKey("school"));
+titleInfos.add(new TitleInfo().title("血压").mapKey("blood"));
+
+List<Map<String, String>> maps = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(titleInfos);
+
+// maps 值为:  mapOf("area" => "南城", "blood" => "133/85", "gender" => "未知", "school" => "北大"));
+```
+
+### 横向生成
+
+![image](https://user-images.githubusercontent.com/1940588/85288833-f8de5280-b4c8-11ea-80e1-8526ea61e58b.png)
+
+```java
+@Test
+public void horizontal() {
+    List<TitleBean> beans = new ArrayList<>();
+    beans.add(new TitleBean().title("地区").sample("示例-海淀区").d1("西城").d2("东城").d3("南城"));
+    beans.add(new TitleBean().title("血压").sample("示例-140/90").d1("135/90").d2("140/95").d3("133/85"));
+    beans.add(new TitleBean().title("性别").sample("示例-女").d1("男").d2("女").d3("未知"));
+    beans.add(new TitleBean().title("学校").sample("示例-蓝翔").d1("东大").d2("西大").d3("北大"));
+    
+    new Xlsx()
+        .template("template-horizontal.xlsx", FileType.CLASSPATH)
+        .fromBeans(beans, new FromOption().horizontal(true))
+        .write("excels/test-horizontal.xlsx");
+}
+
+
+@Data
+@Accessors(fluent = true)
+public class TitleBean {
+    @XlsxCol(title = "标题")  private String title;
+    @XlsxCol(title = "示例") private String sample;
+    @XlsxCol(title = "数据1") private String d1;
+    @XlsxCol(title = "数据2") private String d2;
+    @XlsxCol(title = "数据3") private String d3;
+}
+```
+

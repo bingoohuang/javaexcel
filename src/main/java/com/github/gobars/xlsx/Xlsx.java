@@ -27,7 +27,7 @@ public class Xlsx implements Closeable {
    * @param fileType 模板文件类型
    * @return Xlsx
    */
-  public Xlsx templateXlsx(String fileName, FileType fileType) {
+  public Xlsx template(String fileName, FileType fileType) {
     this.workbook = WorkbookReader.read(fileName, fileType);
     return this;
   }
@@ -39,7 +39,7 @@ public class Xlsx implements Closeable {
    * @param fileType 样式文件类型
    * @return Xlsx
    */
-  public Xlsx styleXlsx(String fileName, FileType fileType) {
+  public Xlsx style(String fileName, FileType fileType) {
     this.styleWorkbook = WorkbookReader.read(fileName, fileType);
     return this;
   }
