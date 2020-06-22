@@ -51,7 +51,7 @@ public class Xlsx implements Closeable {
    * @return Xlsx
    */
   @SneakyThrows
-  public <T> Xlsx fromBeans(List<T> beans) {
+  public <T> Xlsx fromBeans(List<T> beans, FromOption... fromOptions) {
     if (workbook == null) {
       workbook = new XSSFWorkbook();
     }
@@ -62,8 +62,93 @@ public class Xlsx implements Closeable {
 
     val beanClass = beans.get(0).getClass();
     sheet = getSheet(beanClass);
-
     val fieldInfos = createFieldFieldInfoMap(beanClass);
+
+    val option = fromOptions.length > 0 ? fromOptions[0] : new FromOption();
+    if (option.horizontal()) {
+      writeHorizontal(fieldInfos, beans);
+    } else {
+      writeVertical(fieldInfos, beans);
+    }
+
+    return this;
+  }
+
+  @SneakyThrows
+  private <T> void writeHorizontal(Map<Field, FieldInfo> fieldInfos, List<T> beans) {
+    int startCol = locateDataColByTitle(fieldInfos);
+    int col = startCol;
+
+    for (val bean : beans) {
+      for (val entry : fieldInfos.entrySet()) {
+        Field field = entry.getKey();
+        field.setAccessible(true);
+        Object fieldValue = field.get(bean);
+        if (fieldValue == null) {
+          fieldValue = "";
+        }
+
+        FieldInfo fi = entry.getValue();
+        Cell cell = sheet.getRow(fi.index()).createCell(col);
+
+        cell.setCellValue(fieldValue.toString());
+        cell.setCellStyle(fi.dataStyle());
+        sheet.setColumnWidth(col, sheet.getColumnWidth(startCol));
+      }
+
+      col++;
+    }
+  }
+
+  private int locateDataColByTitle(Map<Field, FieldInfo> fieldInfos) {
+    for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
+      int titleCol = findAnyTitle(sheet.getRow(i), fieldInfos);
+      if (titleCol < 0) {
+        continue;
+      }
+
+      if (testTitleCol(titleCol, fieldInfos)) {
+        return titleCol;
+      }
+    }
+
+    return 0;
+  }
+
+  private boolean testTitleCol(int titleCol, Map<Field, FieldInfo> fieldInfos) {
+    Map<Field, Integer> rowIndexes = new HashMap<>(fieldInfos.size());
+
+    for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
+      Row row = sheet.getRow(i);
+      if (row == null || row.getCell(titleCol) == null) {
+        continue;
+      }
+
+      String cellValue = row.getCell(titleCol).getStringCellValue();
+
+      for (val entry : fieldInfos.entrySet()) {
+        String title = getTitle(entry.getValue().xlsxCol());
+        if (cellValue.contains(title)) {
+          rowIndexes.put(entry.getKey(), i);
+          break;
+        }
+      }
+    }
+
+    if (rowIndexes.size() == fieldInfos.size()) {
+      for (val entry : fieldInfos.entrySet()) {
+        FieldInfo fi = entry.getValue();
+        Integer rowIndex = rowIndexes.get(entry.getKey());
+        fi.index(rowIndex);
+        fi.dataStyle(sheet.getRow(rowIndex).getCell(titleCol).getCellStyle());
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  private <T> void writeVertical(Map<Field, FieldInfo> fieldInfos, List<T> beans) {
     int startRow = locateDataRowByTitle(fieldInfos);
 
     Row row = sheet.createRow(startRow);
@@ -76,8 +161,6 @@ public class Xlsx implements Closeable {
     for (val bean : beans) {
       writeDataRow(fieldInfos, startRow++, bean);
     }
-
-    return this;
   }
 
   private <T> void writeDataRow(Map<Field, FieldInfo> fieldInfos, int rowIndex, T bean) {
@@ -91,7 +174,7 @@ public class Xlsx implements Closeable {
   private void writeTileRow(Map<Field, FieldInfo> fieldInfos, Row row) {
     for (val fieldInfo : fieldInfos.entrySet()) {
       val fi = fieldInfo.getValue();
-      val cell = row.createCell(fi.columnIndex());
+      val cell = row.createCell(fi.index());
       cell.setCellValue(getTitle(fi.xlsxCol()));
       if (fi.titleStyle() != null) {
         cell.setCellStyle(fi.titleStyle());
@@ -119,7 +202,7 @@ public class Xlsx implements Closeable {
     }
 
     val firstFieldInfo = fieldInfos.values().iterator().next();
-    Cell dataCell = dataRow.getCell(firstFieldInfo.columnIndex());
+    Cell dataCell = dataRow.getCell(firstFieldInfo.index());
     if (dataCell == null) {
       return;
     }
@@ -129,6 +212,22 @@ public class Xlsx implements Closeable {
     for (val entry : fieldInfos.entrySet()) {
       entry.getValue().dataStyle(cellStyle);
     }
+  }
+
+  private int findAnyTitle(Row row, Map<Field, FieldInfo> fieldInfos) {
+    if (row == null) {
+      return -1;
+    }
+
+    for (val entry : fieldInfos.entrySet()) {
+      String title = getTitle(entry.getValue().xlsxCol());
+      int titleColIndex = findTitleInRow(row, title);
+      if (titleColIndex >= 0) {
+        return titleColIndex;
+      }
+    }
+
+    return -1;
   }
 
   private boolean findAllTitles(Row row, Map<Field, FieldInfo> fieldInfos) {
@@ -144,7 +243,7 @@ public class Xlsx implements Closeable {
     }
 
     for (val entry : fieldInfos.entrySet()) {
-      entry.getValue().columnIndex(columnIndexes.get(entry.getKey()));
+      entry.getValue().index(columnIndexes.get(entry.getKey()));
     }
 
     return true;
@@ -185,13 +284,13 @@ public class Xlsx implements Closeable {
     FieldInfo firstFieldInfo = null;
     if (!fieldInfos.isEmpty()) {
       firstFieldInfo = fieldInfos.values().iterator().next();
-      i = firstFieldInfo.columnIndex() + fieldInfos.size();
+      i = firstFieldInfo.index() + fieldInfos.size();
     }
 
     FieldInfo fi = new FieldInfo();
     fieldInfos.put(field, fi);
 
-    fi.columnIndex(i).xlsxCol(xlsxCol);
+    fi.index(i).xlsxCol(xlsxCol);
 
     if (styleWorkbook == null) {
       return;
@@ -222,7 +321,7 @@ public class Xlsx implements Closeable {
       fieldValue = "";
     }
 
-    Cell cell = row.createCell(fi.columnIndex());
+    Cell cell = row.createCell(fi.index());
     cell.setCellValue(fieldValue.toString());
 
     if (fi.dataStyle() != null) {
@@ -293,7 +392,7 @@ public class Xlsx implements Closeable {
   @SneakyThrows
   private <T> void readRow(T t, Map<Field, FieldInfo> fieldInfos, Row row) {
     for (val entry : fieldInfos.entrySet()) {
-      Cell cell = row.getCell(entry.getValue().columnIndex());
+      Cell cell = row.getCell(entry.getValue().index());
       if (cell == null) {
         continue;
       }

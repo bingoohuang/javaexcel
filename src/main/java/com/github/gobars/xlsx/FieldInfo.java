@@ -4,11 +4,24 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.poi.ss.usermodel.CellStyle;
 
+/**
+ * JavaBean字段在Excel中定位信息.
+ *
+ * @author bingoobjca
+ */
 @Data
 @Accessors(fluent = true)
 public class FieldInfo {
+  XlsxCol xlsxCol;
+
   CellStyle titleStyle;
   CellStyle dataStyle;
-  int columnIndex;
-  XlsxCol xlsxCol;
+  /**
+   * 索引。
+   *
+   * <p>垂直模式时，为列索引
+   *
+   * <p>水平模式时，为行索引
+   */
+  int index;
 }
