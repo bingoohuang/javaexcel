@@ -4,31 +4,50 @@ import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Xlsx implements Closeable {
   private Workbook workbook;
   private Sheet sheet;
 
+  private Workbook styleWorkbook;
+  private Sheet styleSheet;
+
+  /**
+   * 指定模板文件.
+   *
+   * @param fileName 模板文件名
+   * @param fileType 模板文件类型
+   * @return Xlsx
+   */
+  public Xlsx template(String fileName, FileType fileType) {
+    this.styleWorkbook = WorkbookReader.read(fileName, fileType);
+    return this;
+  }
+
   /**
    * 写入列表.
    *
-   * @param rows bean列表
+   * @param beans bean列表
    * @return Xlsx
    */
   @SneakyThrows
-  public <T> Xlsx writeBeans(List<T> rows) {
-    if (rows.size() == 0) {
+  public <T> Xlsx fromBeans(List<T> beans) {
+    if (beans.isEmpty()) {
       return this;
     }
 
-    val beanClass = rows.get(0).getClass();
+    val beanClass = beans.get(0).getClass();
 
     if (workbook == null) {
       workbook = new XSSFWorkbook();
@@ -37,43 +56,110 @@ public class Xlsx implements Closeable {
       sheet = getSheet(beanClass);
     }
 
+    Map<Field, FieldInfo> fieldInfos = createFieldFieldInfoMap(beanClass);
+
     Row row = sheet.createRow(0);
-    int i = 0;
-
-    for (val field : beanClass.getDeclaredFields()) {
-      val title = getTitle(field.getAnnotation(XlsxCol.class));
-      if (Util.isEmpty(title)) {
-        continue;
+    for (val fieldInfo : fieldInfos.entrySet()) {
+      FieldInfo fi = fieldInfo.getValue();
+      Cell cell = row.createCell(fi.columnIndex());
+      cell.setCellValue(getTitle(fi.xlsxCol()));
+      if (fi.titleStyle() != null) {
+        cell.setCellStyle(fi.titleStyle());
       }
-
-      Cell cell = row.createCell(i);
-      cell.setCellValue(title);
-      i++;
     }
 
-    for (val bean : rows) {
+    for (val bean : beans) {
       row = sheet.createRow(sheet.getLastRowNum() + 1);
 
-      int j = 0;
-      for (val field : beanClass.getDeclaredFields()) {
-        val title = getTitle(field.getAnnotation(XlsxCol.class));
-        if (Util.isEmpty(title)) {
-          continue;
-        }
-
-        field.setAccessible(true);
-        Object fieldValue = field.get(bean);
-        if (fieldValue == null) {
-          fieldValue = "";
-        }
-
-        Cell cell = row.createCell(j);
-        cell.setCellValue(fieldValue.toString());
-        j++;
+      for (val entry : fieldInfos.entrySet()) {
+        writeCellValue(row, bean, entry.getValue(), entry.getKey());
       }
     }
 
     return this;
+  }
+
+  private Map<Field, FieldInfo> createFieldFieldInfoMap(Class<?> beanClass) {
+    Map<Field, FieldInfo> fieldInfos = new LinkedHashMap<>();
+
+    for (val field : beanClass.getDeclaredFields()) {
+      prepareFieldInfos(fieldInfos, field);
+    }
+    return fieldInfos;
+  }
+
+  private void prepareFieldInfos(Map<Field, FieldInfo> fieldInfos, Field field) {
+    val xlsxCol = field.getAnnotation(XlsxCol.class);
+    if (xlsxCol == null) {
+      return;
+    }
+
+    val title = getTitle(xlsxCol);
+    if (Util.isEmpty(title)) {
+      return;
+    }
+
+    int i = 0;
+    FieldInfo firstFieldInfo = null;
+    if (!fieldInfos.isEmpty()) {
+      firstFieldInfo = fieldInfos.values().iterator().next();
+      i = firstFieldInfo.columnIndex() + fieldInfos.size();
+    }
+
+    FieldInfo fi = new FieldInfo();
+    fieldInfos.put(field, fi);
+
+    fi.columnIndex(i).xlsxCol(xlsxCol);
+
+    if (styleWorkbook == null) {
+      return;
+    }
+
+    String titleStyle = xlsxCol.titleStyle();
+    if (Util.isNotEmpty(titleStyle)) {
+      fi.titleStyle(cloneCellStyle(titleStyle));
+    } else if (firstFieldInfo != null) {
+      // 继承第一个注解的样式
+      fi.titleStyle(firstFieldInfo.titleStyle());
+    }
+
+    String dataStyle = xlsxCol.dataStyle();
+    if (Util.isNotEmpty(dataStyle)) {
+      fi.dataStyle(cloneCellStyle(dataStyle));
+    } else if (firstFieldInfo != null) {
+      // 继承第一个注解的样式
+      fi.dataStyle(firstFieldInfo.dataStyle());
+    }
+  }
+
+  @SneakyThrows
+  private <T> void writeCellValue(Row row, T bean, FieldInfo fi, Field field) {
+    field.setAccessible(true);
+    Object fieldValue = field.get(bean);
+    if (fieldValue == null) {
+      fieldValue = "";
+    }
+
+    Cell cell = row.createCell(fi.columnIndex());
+    String titleText = fieldValue.toString();
+    cell.setCellValue(titleText);
+
+    if (fi.dataStyle() != null) {
+      cell.setCellStyle(fi.dataStyle());
+    }
+  }
+
+  private CellStyle cloneCellStyle(String cellReference) {
+    if (styleSheet == null) {
+      styleSheet = styleWorkbook.getSheetAt(0);
+    }
+
+    val cr = new CellReference(cellReference);
+    val styleRow = styleSheet.getRow(cr.getRow());
+    val cellStyle = styleRow.getCell(cr.getCol()).getCellStyle();
+    val cloneStyle = workbook.createCellStyle();
+    cloneStyle.cloneStyleFrom(cellStyle);
+    return cloneStyle;
   }
 
   private Sheet getSheet(Class<?> beanClass) {
@@ -81,10 +167,6 @@ public class Xlsx implements Closeable {
   }
 
   private String getTitle(XlsxCol xlsxCol) {
-    if (xlsxCol == null) {
-      return "";
-    }
-
     if (Util.isNotEmpty(xlsxCol.title())) {
       return xlsxCol.title();
     }
@@ -100,26 +182,26 @@ public class Xlsx implements Closeable {
    * @return JavaBean列表
    */
   @SneakyThrows
-  public <T> List<T> readBeans(Class<T> beanClass) {
+  public <T> List<T> toBeans(Class<T> beanClass) {
     ArrayList<T> beans = new ArrayList<>(10);
 
     if (sheet == null) {
       sheet = getSheet(beanClass);
     }
 
+    Map<Field, FieldInfo> fieldInfos = createFieldFieldInfoMap(beanClass);
+
     for (int i = 1, ii = sheet.getLastRowNum(); i <= ii; ++i) {
       val row = sheet.getRow(i);
 
       T t = beanClass.getConstructor().newInstance();
 
-      for (val field : beanClass.getDeclaredFields()) {
-        val title = getTitle(field.getAnnotation(XlsxCol.class));
-        if (Util.isEmpty(title)) {
-          continue;
-        }
+      for (val entry : fieldInfos.entrySet()) {
+        val field = entry.getKey();
+        FieldInfo fi = entry.getValue();
 
         field.setAccessible(true);
-        field.set(t, row.getCell(0).getStringCellValue());
+        field.set(t, row.getCell(fi.columnIndex()).getStringCellValue());
       }
 
       beans.add(t);
@@ -195,30 +277,19 @@ public class Xlsx implements Closeable {
 
   @SneakyThrows
   public Xlsx read(String fileName, FileType fileType) {
-    switch (fileType) {
-      case NORMAL:
-        @Cleanup val fis = new FileInputStream(fileName);
-        return read(fis);
-      case CLASSPATH:
-        @Cleanup val cis = Xlsx.class.getClassLoader().getResourceAsStream(fileName);
-        if (cis != null) {
-          throw new XlsxException("unable to find excel file in classpath " + fileName);
-        }
-
-        return read(cis);
-      default:
-        throw new XlsxException("unsupported fileType " + fileType);
-    }
+    this.workbook = WorkbookReader.read(fileName, fileType);
+    return this;
   }
 
   @SneakyThrows
   public Xlsx read(String fileName) {
-    return read(fileName, FileType.NORMAL);
+    this.workbook = WorkbookReader.read(fileName, FileType.NORMAL);
+    return this;
   }
 
   @SneakyThrows
   public Xlsx read(InputStream is) {
-    this.workbook = WorkbookFactory.create(is);
+    this.workbook = WorkbookReader.read(is);
     return this;
   }
 

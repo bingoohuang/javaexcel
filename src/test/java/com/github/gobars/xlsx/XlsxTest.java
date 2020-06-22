@@ -10,6 +10,47 @@ import java.util.List;
 import static com.google.common.truth.Truth.assertThat;
 
 public class XlsxTest {
+  @Test
+  public void rows() {
+    List<RowBean> rows = new ArrayList<>();
+    rows.add(new RowBean().name("黄进兵"));
+
+    String excel = "excels/test-rowsbean.xlsx";
+    new Xlsx().fromBeans(rows).write(excel);
+    List<RowBean> read = new Xlsx().read(excel).toBeans(RowBean.class);
+
+    assertThat(read).isEqualTo(rows);
+  }
+
+  @Test
+  public void rows2() {
+    List<RowBean2> rows = new ArrayList<>();
+    rows.add(new RowBean2().name("黄进兵"));
+
+    String excel = "excels/test-rowsbean2.xlsx";
+
+    new Xlsx().template("rowsbean2-template.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
+
+    List<RowBean2> read = new Xlsx().read(excel).toBeans(RowBean2.class);
+
+    assertThat(read).isEqualTo(rows);
+  }
+
+  @Test
+  public void rows3() {
+    List<RowBean3> rows = new ArrayList<>();
+    rows.add(new RowBean3().name("黄进兵").city("海淀区"));
+    rows.add(new RowBean3().name("兵进黄").city("西城区"));
+
+    String excel = "excels/test-rowsbean3.xlsx";
+
+    new Xlsx().template("rowsbean2-template.xlsx", FileType.CLASSPATH).fromBeans(rows).write(excel);
+
+    List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
+
+    assertThat(read).isEqualTo(rows);
+  }
+
   @Data
   @Accessors(fluent = true)
   public static class RowBean {
@@ -17,15 +58,20 @@ public class XlsxTest {
     private String name;
   }
 
-  @Test
-  public void rows() {
-    List<RowBean> rows = new ArrayList<>();
-    rows.add(new RowBean().name("黄进兵"));
+  @Data
+  @Accessors(fluent = true)
+  public static class RowBean2 {
+    @XlsxCol(title = "姓名", titleStyle = "A1", dataStyle = "A2")
+    private String name;
+  }
 
-    new Xlsx().writeBeans(rows).write("rowsbean.xlsx");
+  @Data
+  @Accessors(fluent = true)
+  public static class RowBean3 {
+    @XlsxCol(title = "姓名", titleStyle = "A1", dataStyle = "A2")
+    private String name;
 
-    List<RowBean> read = new Xlsx().read("rowsbean.xlsx").readBeans(RowBean.class);
-
-    assertThat(read).isEqualTo(rows);
+    @XlsxCol(title = "城市")
+    private String city;
   }
 }

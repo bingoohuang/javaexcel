@@ -24,4 +24,18 @@ public @interface XlsxCol {
    * @return 行标题
    */
   String value() default "";
+
+  /**
+   * 标题样式在模板样式中参考单元格.
+   *
+   * @return 单元格引用，例如A1
+   */
+  String titleStyle() default "";
+
+  /**
+   * 数据样式在模板样式中参考单元格.
+   *
+   * @return 单元格引用，例如A2
+   */
+  String dataStyle() default "";
 }
