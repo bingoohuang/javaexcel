@@ -424,6 +424,14 @@ public class Xlsx implements Closeable {
       T t = beanClass.getConstructor().newInstance();
       readRow(t, fieldInfos, sheet.getRow(i));
 
+      if (t instanceof IgnoreAware && ((IgnoreAware) t).shouldIgnored()) {
+        continue;
+      }
+
+      if (t instanceof RownumAware) {
+        ((RownumAware) t).setRownum(i);
+      }
+
       beans.add(t);
     }
 
