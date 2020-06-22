@@ -48,6 +48,8 @@ public class Xlsx implements Closeable {
    * 写入列表.
    *
    * @param beans bean列表
+   * @param <T> bean类型
+   * @param fromOptions 写入选项
    * @return Xlsx
    */
   @SneakyThrows
