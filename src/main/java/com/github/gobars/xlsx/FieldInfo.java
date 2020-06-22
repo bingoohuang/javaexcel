@@ -12,10 +12,11 @@ import org.apache.poi.ss.usermodel.CellStyle;
 @Data
 @Accessors(fluent = true)
 public class FieldInfo {
-  XlsxCol xlsxCol;
+  private String title;
 
-  CellStyle titleStyle;
-  CellStyle dataStyle;
+  private CellStyle titleStyle;
+  private CellStyle dataStyle;
+
   /**
    * 索引。
    *
@@ -23,5 +24,5 @@ public class FieldInfo {
    *
    * <p>水平模式时，为行索引
    */
-  int index;
+  private int index;
 }

@@ -5,7 +5,9 @@ import lombok.experimental.Accessors;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -39,6 +41,12 @@ public class TemplateTest {
     beans.add(new TitleBean().title("性别").sample("示例-女").data1("男").data2("女").data3("未知"));
     beans.add(new TitleBean().title("学校").sample("示例-蓝翔").data1("东大").data2("西大").data3("北大"));
 
+    new Xlsx()
+        .templateXlsx("template-horizontal.xlsx", FileType.CLASSPATH)
+        .fromBeans(beans, new FromOption().horizontal(true))
+        .protect("123456")
+        .write("excels/test-123456.xlsx");
+
     String excel = "excels/test-horizontal.xlsx";
     new Xlsx()
         .templateXlsx("template-horizontal.xlsx", FileType.CLASSPATH)
@@ -48,14 +56,34 @@ public class TemplateTest {
     List<HorizontalBean> read = new Xlsx().read(excel).toBeans(HorizontalBean.class);
     assertThat(read)
         .containsExactly(
-            new HorizontalBean()
-                .area("示例-海淀区")
-                .bloodPressure("示例-140/90")
-                .gender("示例-女")
-                .school("示例-蓝翔"),
-            new HorizontalBean().area("西城").bloodPressure("135/90").gender("男").school("东大"),
-            new HorizontalBean().area("东城").bloodPressure("140/95").gender("女").school("西大"),
-            new HorizontalBean().area("南城").bloodPressure("133/85").gender("未知").school("北大"));
+            new HorizontalBean().area("示例-海淀区").blood("示例-140/90").gender("示例-女").school("示例-蓝翔"),
+            new HorizontalBean().area("西城").blood("135/90").gender("男").school("东大"),
+            new HorizontalBean().area("东城").blood("140/95").gender("女").school("西大"),
+            new HorizontalBean().area("南城").blood("133/85").gender("未知").school("北大"));
+
+    List<TitleInfo> titleInfos = new ArrayList<>();
+    titleInfos.add(new TitleInfo().title("地区").mapKey("area"));
+    titleInfos.add(new TitleInfo().title("性别").mapKey("gender"));
+    titleInfos.add(new TitleInfo().title("学校").mapKey("school"));
+    titleInfos.add(new TitleInfo().title("血压").mapKey("blood"));
+
+    List<Map<String, String>> maps = new Xlsx().read(excel).toBeans(titleInfos);
+    assertThat(maps)
+        .containsExactly(
+            mapOf("area", "示例-海淀区", "blood", "示例-140/90", "gender", "示例-女", "school", "示例-蓝翔"),
+            mapOf("area", "西城", "blood", "135/90", "gender", "男", "school", "东大"),
+            mapOf("area", "东城", "blood", "140/95", "gender", "女", "school", "西大"),
+            mapOf("area", "南城", "blood", "133/85", "gender", "未知", "school", "北大"));
+  }
+
+  private Map<String, String> mapOf(String... values) {
+    Map<String, String> m = new HashMap<>(values.length / 2 + 1);
+
+    for (int i = 0; i < values.length; i += 2) {
+      m.put(values[i], values[i + 1]);
+    }
+
+    return m;
   }
 
   @Data
@@ -65,7 +93,7 @@ public class TemplateTest {
     private String area;
 
     @XlsxCol(title = "血压")
-    private String bloodPressure;
+    private String blood;
 
     @XlsxCol(title = "性别")
     private String gender;

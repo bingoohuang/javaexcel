@@ -61,7 +61,7 @@ public class Xlsx implements Closeable {
     }
 
     val beanClass = beans.get(0).getClass();
-    sheet = getSheet(beanClass);
+    sheet = getSheet();
     val fieldInfos = createFieldFieldInfoMap(beanClass);
 
     val option = fromOptions.length > 0 ? fromOptions[0] : new FromOption();
@@ -127,8 +127,7 @@ public class Xlsx implements Closeable {
       String cellValue = row.getCell(titleCol).getStringCellValue();
 
       for (val entry : fieldInfos.entrySet()) {
-        String title = getTitle(entry.getValue().xlsxCol());
-        if (cellValue.contains(title)) {
+        if (cellValue.contains(entry.getValue().title())) {
           rowIndexes.put(entry.getKey(), i);
           break;
         }
@@ -175,14 +174,14 @@ public class Xlsx implements Closeable {
     for (val fieldInfo : fieldInfos.entrySet()) {
       val fi = fieldInfo.getValue();
       val cell = row.createCell(fi.index());
-      cell.setCellValue(getTitle(fi.xlsxCol()));
+      cell.setCellValue(fi.title());
       if (fi.titleStyle() != null) {
         cell.setCellStyle(fi.titleStyle());
       }
     }
   }
 
-  private int locateDataRowByTitle(Map<Field, FieldInfo> fieldInfos) {
+  private <T> int locateDataRowByTitle(Map<T, FieldInfo> fieldInfos) {
     for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
       Row row = sheet.getRow(i);
       if (row != null && findAllTitles(row, fieldInfos)) {
@@ -195,7 +194,7 @@ public class Xlsx implements Closeable {
     return 0;
   }
 
-  private void fulfilDataCellStyle(Map<Field, FieldInfo> fieldInfos, int dataRowNum) {
+  private <T> void fulfilDataCellStyle(Map<T, FieldInfo> fieldInfos, int dataRowNum) {
     Row dataRow = sheet.getRow(dataRowNum);
     if (dataRow == null) {
       return;
@@ -220,8 +219,7 @@ public class Xlsx implements Closeable {
     }
 
     for (val entry : fieldInfos.entrySet()) {
-      String title = getTitle(entry.getValue().xlsxCol());
-      int titleColIndex = findTitleInRow(row, title);
+      int titleColIndex = findTitleInRow(row, entry.getValue().title());
       if (titleColIndex >= 0) {
         return titleColIndex;
       }
@@ -230,11 +228,10 @@ public class Xlsx implements Closeable {
     return -1;
   }
 
-  private boolean findAllTitles(Row row, Map<Field, FieldInfo> fieldInfos) {
-    Map<Field, Integer> columnIndexes = new HashMap<>(fieldInfos.size());
+  private <T> boolean findAllTitles(Row row, Map<T, FieldInfo> fieldInfos) {
+    Map<T, Integer> columnIndexes = new HashMap<>(fieldInfos.size());
     for (val entry : fieldInfos.entrySet()) {
-      String title = getTitle(entry.getValue().xlsxCol());
-      int titleColIndex = findTitleInRow(row, title);
+      int titleColIndex = findTitleInRow(row, entry.getValue().title());
       if (titleColIndex < 0) {
         return false;
       }
@@ -269,28 +266,27 @@ public class Xlsx implements Closeable {
     return fieldInfos;
   }
 
+  private Map<TitleInfo, FieldInfo> createFieldFieldInfoMap(List<TitleInfo> titleInfos) {
+    Map<TitleInfo, FieldInfo> fieldInfos = new LinkedHashMap<>();
+
+    for (val field : titleInfos) {
+      prepareFieldInfos(fieldInfos, field);
+    }
+    return fieldInfos;
+  }
+
   private void prepareFieldInfos(Map<Field, FieldInfo> fieldInfos, Field field) {
     val xlsxCol = field.getAnnotation(XlsxCol.class);
-    if (xlsxCol == null) {
-      return;
-    }
-
     val title = getTitle(xlsxCol);
     if (Util.isEmpty(title)) {
       return;
     }
 
-    int i = 0;
-    FieldInfo firstFieldInfo = null;
-    if (!fieldInfos.isEmpty()) {
-      firstFieldInfo = fieldInfos.values().iterator().next();
-      i = firstFieldInfo.index() + fieldInfos.size();
-    }
-
     FieldInfo fi = new FieldInfo();
     fieldInfos.put(field, fi);
 
-    fi.index(i).xlsxCol(xlsxCol);
+    FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
+    fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(title);
 
     if (styleWorkbook == null) {
       return;
@@ -299,18 +295,34 @@ public class Xlsx implements Closeable {
     String titleStyle = xlsxCol.titleStyle();
     if (Util.isNotEmpty(titleStyle)) {
       fi.titleStyle(cloneCellStyle(titleStyle));
-    } else if (firstFieldInfo != null) {
+    } else if (firstFi != null) {
       // 继承第一个注解的样式
-      fi.titleStyle(firstFieldInfo.titleStyle());
+      fi.titleStyle(firstFi.titleStyle());
     }
 
     String dataStyle = xlsxCol.dataStyle();
     if (Util.isNotEmpty(dataStyle)) {
       fi.dataStyle(cloneCellStyle(dataStyle));
-    } else if (firstFieldInfo != null) {
+    } else if (firstFi != null) {
       // 继承第一个注解的样式
-      fi.dataStyle(firstFieldInfo.dataStyle());
+      fi.dataStyle(firstFi.dataStyle());
     }
+  }
+
+  private void prepareFieldInfos(Map<TitleInfo, FieldInfo> fieldInfos, TitleInfo field) {
+    FieldInfo fi = new FieldInfo();
+    fieldInfos.put(field, fi);
+
+    FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
+    fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(field.title());
+  }
+
+  private <T> FieldInfo getFirstFieldInfo(Map<T, FieldInfo> fieldInfos) {
+    if (fieldInfos.isEmpty()) {
+      return null;
+    }
+
+    return fieldInfos.values().iterator().next();
   }
 
   @SneakyThrows
@@ -341,7 +353,7 @@ public class Xlsx implements Closeable {
     return cloneStyle;
   }
 
-  private Sheet getSheet(Class<?> beanClass) {
+  private Sheet getSheet() {
     if (sheet != null) {
       return sheet;
     }
@@ -354,11 +366,38 @@ public class Xlsx implements Closeable {
   }
 
   private String getTitle(XlsxCol xlsxCol) {
+    if (xlsxCol == null) {
+      return "";
+    }
+
     if (Util.isNotEmpty(xlsxCol.title())) {
       return xlsxCol.title();
     }
 
     return xlsxCol.value();
+  }
+
+  /**
+   * 从指定的JavaBean类型，读取JavaBean列表.
+   *
+   * @param titleInfos 标题信息
+   * @return Map列表
+   */
+  @SneakyThrows
+  public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos) {
+    ArrayList<Map<String, String>> beans = new ArrayList<>(10);
+
+    if (sheet == null) {
+      sheet = getSheet();
+    }
+    val fieldInfos = createFieldFieldInfoMap(titleInfos);
+    int startRow = locateDataRowByTitle(fieldInfos);
+
+    for (int i = startRow, ii = sheet.getLastRowNum(); i <= ii; ++i) {
+      beans.add(readMap(fieldInfos, sheet.getRow(i)));
+    }
+
+    return beans;
   }
 
   /**
@@ -373,7 +412,7 @@ public class Xlsx implements Closeable {
     ArrayList<T> beans = new ArrayList<>(10);
 
     if (sheet == null) {
-      sheet = getSheet(beanClass);
+      sheet = getSheet();
     }
 
     val fieldInfos = createFieldFieldInfoMap(beanClass);
@@ -405,13 +444,30 @@ public class Xlsx implements Closeable {
     }
   }
 
+  @SneakyThrows
+  private Map<String, String> readMap(Map<TitleInfo, FieldInfo> fieldInfos, Row row) {
+    Map<String, String> map = new HashMap<>(fieldInfos.size());
+
+    for (val entry : fieldInfos.entrySet()) {
+      Cell cell = row.getCell(entry.getValue().index());
+      if (cell == null) {
+        continue;
+      }
+
+      val titleInfo = entry.getKey();
+      map.put(titleInfo.mapKey(), cell.getStringCellValue());
+    }
+
+    return map;
+  }
+
   /**
    * 用密码保护工作簿。只有在xlsx格式才起作用。
    *
    * @param password 保护密码。
    * @return Xlsx
    */
-  public Xlsx protectWorkbook(String password) {
+  public Xlsx protect(String password) {
     if (Util.isEmpty(password)) {
       throw new XlsxException("password should not be empty");
     }
