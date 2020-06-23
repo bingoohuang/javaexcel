@@ -119,45 +119,45 @@ public class TemplateTest {
   @Data
   @Accessors(fluent = true)
   public static class HorizontalBean {
-    @XlsxCol(title = "地区")
+    @XlsxCol("地区")
     private String area;
 
-    @XlsxCol(title = "血压")
+    @XlsxCol("血压")
     private String blood;
 
-    @XlsxCol(title = "性别")
+    @XlsxCol("性别")
     private String gender;
 
-    @XlsxCol(title = "学校")
+    @XlsxCol("学校")
     private String school;
   }
 
   @Data
   @Accessors(fluent = true)
   public static class TitleBean {
-    @XlsxCol(title = "数据1")
+    @XlsxCol("数据1")
     private String d1;
 
-    @XlsxCol(title = "数据2")
+    @XlsxCol("数据2")
     private String d2;
 
-    @XlsxCol(title = "数据3")
+    @XlsxCol("数据3")
     private String d3;
 
-    @XlsxCol(title = "标题")
+    @XlsxCol("标题")
     private String title;
 
-    @XlsxCol(title = "示例")
+    @XlsxCol("示例")
     private String sample;
   }
 
   @Data
   @Accessors(fluent = true)
   public static class RowBean3 {
-    @XlsxCol(title = "姓名")
+    @XlsxCol("姓名")
     private String name;
 
-    @XlsxCol(title = "城市")
+    @XlsxCol("城市")
     private String city;
   }
 }

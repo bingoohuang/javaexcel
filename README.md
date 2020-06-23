@@ -12,20 +12,20 @@ binding between java beans and excel rows based on poi.
 
 ### JavaBean读取
 
-1. 定义读取JavaBean
+定义JavaBean：
 
 ```java
 @Data
 @Accessors(fluent = true)
 public static class Bean {
-    @XlsxCol(title = "地区") private String area;
-    @XlsxCol(title = "血压") private String blood;
-    @XlsxCol(title = "性别") private String gender;
-    @XlsxCol(title = "学校") private String school;
+    @XlsxCol("地区") private String area;
+    @XlsxCol("血压") private String blood;
+    @XlsxCol("性别") private String gender;
+    @XlsxCol("学校") private String school;
 }
 ```
 
-2. 读取
+读取到JavaBean列表中：
 
 ```java
 List<Bean> read = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(Bean.class);
@@ -57,7 +57,7 @@ public void horizontal() {
     beans.add(new TitleBean().title("血压").sample("示例-140/90").d1("135/90").d2("140/95").d3("133/85"));
     beans.add(new TitleBean().title("性别").sample("示例-女").d1("男").d2("女").d3("未知"));
     beans.add(new TitleBean().title("学校").sample("示例-蓝翔").d1("东大").d2("西大").d3("北大"));
-    
+
     new Xlsx()
         .template("template-horizontal.xlsx", FileType.CLASSPATH)
         .fromBeans(beans, new FromOption().horizontal(true))
@@ -68,11 +68,10 @@ public void horizontal() {
 @Data
 @Accessors(fluent = true)
 public class TitleBean {
-    @XlsxCol(title = "标题")  private String title;
-    @XlsxCol(title = "示例") private String sample;
-    @XlsxCol(title = "数据1") private String d1;
-    @XlsxCol(title = "数据2") private String d2;
-    @XlsxCol(title = "数据3") private String d3;
+    @XlsxCol("标题")  private String title;
+    @XlsxCol("示例") private String sample;
+    @XlsxCol("数据1") private String d1;
+    @XlsxCol("数据2") private String d2;
+    @XlsxCol("数据3") private String d3;
 }
 ```
-
