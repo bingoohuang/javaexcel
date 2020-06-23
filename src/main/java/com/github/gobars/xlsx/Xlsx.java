@@ -370,6 +370,7 @@ public class Xlsx implements Closeable {
    * 从指定的JavaBean类型，读取JavaBean列表.
    *
    * @param titleInfos 标题信息
+   * @param toOptions 选项，只能0个或者1个
    * @return Map列表
    */
   public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos, ToOption... toOptions) {
