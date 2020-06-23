@@ -529,7 +529,7 @@ public class Xlsx implements Closeable {
    * 指定写入的模板文件，或者需要读取的文件.
    *
    * @param fileName 文件名
-   * @param fileType 文件类型
+   * @param fileType  文件类型
    * @return Xlsx
    */
   @SneakyThrows

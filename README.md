@@ -41,7 +41,6 @@ titleInfos.add(new TitleInfo().title("学校").mapKey("school"));
 titleInfos.add(new TitleInfo().title("血压").mapKey("blood"));
 
 List<Map<String, String>> maps = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(titleInfos);
-
 // maps 值为:  mapOf("area" => "南城", "blood" => "133/85", "gender" => "未知", "school" => "北大"));
 ```
 
@@ -59,11 +58,10 @@ public void horizontal() {
     beans.add(new TitleBean().title("学校").sample("示例-蓝翔").d1("东大").d2("西大").d3("北大"));
 
     new Xlsx()
-        .template("template-horizontal.xlsx", FileType.CLASSPATH)
+        .read("template-horizontal.xlsx", FileType.CLASSPATH)
         .fromBeans(beans, new FromOption().horizontal(true))
         .write("excels/test-horizontal.xlsx");
 }
-
 
 @Data
 @Accessors(fluent = true)
