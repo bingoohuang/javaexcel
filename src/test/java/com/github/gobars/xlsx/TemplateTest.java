@@ -73,10 +73,10 @@ public class TemplateTest {
     List<HBean> hbeans = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(HBean.class);
     assertThat(hbeans)
         .containsExactly(
-            new HBean().area("示例-海淀区").blood("示例-140/90").rownum(4),
-            new HBean().area("西城").blood("135/90").rownum(5),
-            new HBean().area("东城").blood("140/95").rownum(6),
-            new HBean().area("南城").blood("133/85").rownum(7));
+            new HBean().area("示例-海淀区").blood("示例-140/90").rownum(3),
+            new HBean().area("西城").blood("135/90").rownum(4),
+            new HBean().area("东城").blood("140/95").rownum(5),
+            new HBean().area("南城").blood("133/85").rownum(6));
 
     List<IgnoreBean> ibeans =
         new Xlsx().read("excels/test-horizontal.xlsx").toBeans(IgnoreBean.class);
