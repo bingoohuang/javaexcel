@@ -12,13 +12,15 @@ binding between java beans and excel rows based on poi.
 
 ### JavaBean读取
 
-定义JavaBean：
+![image](https://user-images.githubusercontent.com/1940588/85396427-51265a80-b584-11ea-8ddf-c6bf39c5ed2b.png)
+
+定义与如上Excel对应的JavaBean：
 
 ```java
 @Data
 @Accessors(fluent = true)
 public static class Bean {
-    @XlsxCol("地区") private String area;
+    @XlsxCol(title = "地区", ignoreRow = "示例-") private String area;
     @XlsxCol("血压") private String blood;
     @XlsxCol("性别") private String gender;
     @XlsxCol("学校") private String school;
@@ -73,3 +75,84 @@ public class TitleBean {
     @XlsxCol("数据3") private String d3;
 }
 ```
+
+### JavaBean校验
+
+1. 在JavaBean上定义注解`@XlsxValid`
+1. 字段上使用Javax校验注解，或者Hibernate校验
+1. 实现`XlsxValidatable`接口自定义业务校验的其它校验
+
+例如:
+
+```java
+@Data
+@Accessors(fluent = true)
+@XlsxValid(writeErrorToExcel = true)
+public static class XBean implements XlsxValidatable<XBean> {
+    @NotNull
+    @Length(max = 3)
+    @XlsxCol(title = "地区", ignoreRow = "示例-")
+    private String area;
+
+    @XlsxCol("血压")
+    private String blood;
+    
+    @XlsxCol("性别")
+    @Pattern(regexp = "男|女")
+    private String gender;
+
+    @Override
+    public String validate(String error, XBean bean) {
+      // 自定义其它校验，比如业务校验，状态校验、存在校验、组合校验等
+      // 返回null表示校验通过，否则返回具体校验失败信息
+      return null;
+    }
+}
+```
+
+```java
+List<XBean> vBeans = xlsx.toBeans(XBean.class);
+// 因为XBean上注解了writeErrorToExcel = true，所以可以写出带有错误提示的excel
+xlsx.write("excels/test-validate.xlsx"); 
+```
+
+### 读出到Map的校验
+
+由于Map类型，无法使用注解，只能手动定义回调函数，例如.
+
+```java
+Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
+
+XlsxValidatable<Map<String, String>> validatable =
+    (lastError, map) -> {
+      String gender = map.get("gender");
+      if ("男".equals(gender) || "女".equals(gender)) {
+        return null;
+      }
+
+      return "性别格式错误，必须为男或女";
+    };
+
+XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
+    bean -> Util.contains(bean.get("area"), "示例-");
+
+ToOption toOption =
+    new ToOption()
+        // 将错误标识在Excel行末
+        .writeErrorToExcel(true)
+        .ignoreCallback(ignoreCallback)
+        // 校验回调
+        .validatable(validatable);
+
+List<TitleInfo> titleInfos =
+    TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+
+List<Map<String, String>> maps = xlsx.toBeans(titleInfos, toOption);
+xlsx.write("excels/test-validate-map.xlsx");
+```
+
+更详细参见[ValidationTest.readExcel2Maps](src/test/java/com/github/gobars/xlsx/ValidateTest.java).
+
+错误提示的excel:
+
+![image](https://user-images.githubusercontent.com/1940588/85397426-1b827100-b586-11ea-9c59-cfa7c140078b.png)

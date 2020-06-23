@@ -39,9 +39,11 @@ public class ValidateTest {
 
     ToOption toOption =
         new ToOption()
+            // 将错误标识在Excel行末
             .writeErrorToExcel(true)
             .errCallback(errCallback)
             .ignoreCallback(ignoreCallback)
+            // 校验回调
             .validatable(validatable);
 
     List<TitleInfo> titleInfos =
