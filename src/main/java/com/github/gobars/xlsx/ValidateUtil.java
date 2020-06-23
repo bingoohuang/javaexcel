@@ -18,13 +18,20 @@ public class ValidateUtil {
       return null;
     }
 
-    String msg = javaxValidate(obj);
+    try {
+      String msg = javaxValidate(obj);
 
-    if (obj instanceof XlsxValidatable) {
-      return ((XlsxValidatable) obj).validate(msg, obj);
+      if (obj instanceof XlsxValidatable) {
+        return ((XlsxValidatable) obj).validate(msg, obj);
+      }
+
+      return msg;
+
+    } catch (Exception ex) {
+      log.warn("failed to validate obj {}", obj, ex);
     }
 
-    return msg;
+    return null;
   }
 
   public String javaxValidate(Object obj) {
