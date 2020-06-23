@@ -14,17 +14,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Xlsx implements Closeable {
+  boolean autoClose = true;
   private Workbook workbook;
   private Sheet sheet;
-
   private Workbook styleWorkbook;
   private Sheet styleSheet;
-
-  private boolean autoClose = true;
-  private CellStyle redCellStyle;
 
   /**
    * 是否在readBeans或者write方法之后，自动关闭相关资源.
@@ -174,7 +174,7 @@ public class Xlsx implements Closeable {
     }
   }
 
-  private <T> int locateDataRowByTitle(Map<T, FieldInfo> fieldInfos) {
+  <T> int locateDataRowByTitle(Map<T, FieldInfo> fieldInfos) {
     for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
       Row row = sheet.getRow(i);
       if (row != null && findAllTitles(row, fieldInfos)) {
@@ -350,7 +350,7 @@ public class Xlsx implements Closeable {
     return cloneStyle;
   }
 
-  private Sheet getSheet() {
+  Sheet getSheet() {
     if (workbook == null) {
       workbook = new XSSFWorkbook();
     }
@@ -372,18 +372,10 @@ public class Xlsx implements Closeable {
    * @param titleInfos 标题信息
    * @return Map列表
    */
-  public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos) {
-    ArrayList<Map<String, String>> beans = new ArrayList<>(10);
-
-    val sh = getSheet();
+  public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos, ToOption... toOptions) {
     val fieldInfos = createFieldInfoMap(titleInfos);
-    int startRow = locateDataRowByTitle(fieldInfos);
 
-    for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
-      beans.add(readMap(fieldInfos, sh.getRow(i)));
-    }
-
-    return beans;
+    return new MapRowToBeans(workbook).toBeans(this, fieldInfos, null, toOptions);
   }
 
   /**
@@ -396,139 +388,16 @@ public class Xlsx implements Closeable {
    */
   @SneakyThrows
   public <T> List<T> toBeans(Class<T> beanClass, ToOption... toOptions) {
-    ArrayList<T> beans = new ArrayList<>(10);
-
-    val sh = getSheet();
     val fieldInfos = createFieldInfoMap(beanClass);
-    int startRow = locateDataRowByTitle(fieldInfos);
-    int errColNum = sh.getRow(startRow).getLastCellNum();
 
-    val xv = beanClass.getAnnotation(XlsxValid.class);
-
-    val okRows = new ArrayList<Integer>();
-    ToOption toOption = createToOption(toOptions);
-    int errRows = 0;
-
-    boolean tempAutoClose = this.autoClose;
-
-    for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
-      T t = beanClass.getConstructor().newInstance();
-      Row row = sh.getRow(i);
-
-      if (!readRow(t, fieldInfos, row)) {
-        continue;
-      }
-
-      String errMsg = ValidateUtil.validate(t);
-      if (errMsg == null) {
-        okRows.add(i);
-        beans.add(t);
-        continue;
-      }
-
-      if (xv != null && xv.writeErrorToExcel()) {
-        errRows++;
-        Cell errCell = row.createCell(errColNum);
-        errCell.setCellValue(errMsg);
-        errCell.setCellStyle(createRedCellStyle());
-        autoClose(false);
-
-        errCallback(toOption, t, errMsg, i);
-      }
-    }
-
-    if (xv != null && xv.removeOKRows() && !okRows.isEmpty()) {
-      Poi.removeRows(sh, okRows);
-      autoClose(false);
-    }
-
-    toOption.errRows(errRows).okRows(okRows.size());
-
-    autoClose();
-
-    if (tempAutoClose != this.autoClose) {
-      this.autoClose = tempAutoClose;
-    }
-
-    return beans;
+    XlsxValid xv = beanClass.getAnnotation(XlsxValid.class);
+    return new BeanRowToBeans<T>(workbook, beanClass).toBeans(this, fieldInfos, xv, toOptions);
   }
 
-  @SuppressWarnings("unchecked")
-  private <T> void errCallback(ToOption toOption, T t, String errMsg, int rownum) {
-    if (toOption.errCallback != null) {
-      toOption.errCallback.call(t, errMsg, rownum);
-    }
-  }
-
-  private ToOption createToOption(ToOption[] toOptions) {
-    if (toOptions.length == 0) {
-      return new ToOption();
-    }
-
-    return toOptions[0];
-  }
-
-  private CellStyle createRedCellStyle() {
-    if (redCellStyle != null) {
-      return redCellStyle;
-    }
-
-    redCellStyle = workbook.createCellStyle();
-    val font = workbook.createFont();
-    font.setColor(IndexedColors.RED.getIndex());
-    redCellStyle.setFont(font);
-
-    return redCellStyle;
-  }
-
-  private void autoClose() {
+  void doAutoClose() {
     if (this.autoClose) {
       close();
     }
-  }
-
-  /**
-   * 读取一行.
-   *
-   * @param t JavaBean
-   * @param fieldInfos 字段信息
-   * @param row Excel行
-   * @param <T> JavaBean类型
-   * @return 是否有效读取
-   */
-  @SneakyThrows
-  private <T> boolean readRow(T t, Map<Field, FieldInfo> fieldInfos, Row row) {
-    for (val entry : fieldInfos.entrySet()) {
-      Cell cell = row.getCell(entry.getValue().index());
-      if (cell == null) {
-        continue;
-      }
-
-      String s = cell.getStringCellValue();
-      String ignoreRow = entry.getValue().ignoreRow();
-      if (Util.isNotEmpty(ignoreRow) && Util.contains(s, ignoreRow)) {
-        return false;
-      }
-
-      entry.getKey().set(t, s);
-    }
-
-    return true;
-  }
-
-  private Map<String, String> readMap(Map<TitleInfo, FieldInfo> fieldInfos, Row row) {
-    Map<String, String> map = new HashMap<>(fieldInfos.size());
-
-    for (val entry : fieldInfos.entrySet()) {
-      Cell cell = row.getCell(entry.getValue().index());
-      if (cell == null) {
-        continue;
-      }
-
-      map.put(entry.getKey().mapKey(), cell.getStringCellValue());
-    }
-
-    return map;
   }
 
   /**
@@ -563,7 +432,7 @@ public class Xlsx implements Closeable {
   @SneakyThrows
   public Xlsx write(OutputStream out) {
     workbook.write(out);
-    autoClose();
+    doAutoClose();
 
     return this;
   }

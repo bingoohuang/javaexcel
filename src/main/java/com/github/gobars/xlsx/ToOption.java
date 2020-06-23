@@ -6,8 +6,15 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(fluent = true)
 public class ToOption {
-  int okRows;
-  int errRows;
+  private int okRows;
+  private int errRows;
 
-  XlsxValidErrCallback errCallback;
+  private XlsxValidErrCallback errCallback;
+
+  private boolean writeErrorToExcel;
+  private boolean removeOkRows;
+
+  private XlsxIgnoreCallback ignoreCallback;
+
+  private XlsxValidatable validatable;
 }

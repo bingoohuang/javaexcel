@@ -13,8 +13,16 @@ import java.util.*;
 @UtilityClass
 public class ValidateUtil {
   @SuppressWarnings("unchecked")
-  public String validate(Object obj) {
-    if (obj == null || !obj.getClass().isAnnotationPresent(XlsxValid.class)) {
+  public String validate(ToOption toOption, Object obj) {
+    if (obj == null) {
+      return null;
+    }
+
+    if (toOption != null && toOption.validatable() != null) {
+      return toOption.validatable().validate(null, obj);
+    }
+
+    if (!(obj instanceof Map) && !obj.getClass().isAnnotationPresent(XlsxValid.class)) {
       return null;
     }
 

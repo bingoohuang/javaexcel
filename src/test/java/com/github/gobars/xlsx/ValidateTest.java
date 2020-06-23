@@ -9,11 +9,57 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.github.gobars.xlsx.FileType.CLASSPATH;
+import static com.github.gobars.xlsx.U.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class ValidateTest {
+  @Test
+  public void readExcel2Maps() {
+    List<Integer> errRownums = new ArrayList<>();
+    Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
+
+    XlsxValidatable<Map<String, String>> validatable =
+        (lastError, map) -> {
+          String gender = map.get("gender");
+          if ("男".equals(gender) || "女".equals(gender)) {
+            return null;
+          }
+
+          return "性别格式错误，必须为男或女";
+        };
+    XlsxValidErrCallback<Map<String, String>> errCallback =
+        (xBean, errMsg, rownum) -> {
+          errRownums.add(rownum);
+        };
+    XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
+        bean -> Util.contains(bean.get("area"), "示例-");
+
+    ToOption toOption =
+        new ToOption()
+            .writeErrorToExcel(true)
+            .errCallback(errCallback)
+            .ignoreCallback(ignoreCallback)
+            .validatable(validatable);
+
+    List<TitleInfo> titleInfos =
+        TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+
+    List<Map<String, String>> maps = xlsx.toBeans(titleInfos, toOption);
+    assertThat(maps)
+        .containsExactly(
+            mapOf("area", "西城", "blood", "135/90", "gender", "男"),
+            mapOf("area", "东城", "blood", "140/95", "gender", "女"));
+
+    xlsx.write("excels/test-validate-map.xlsx");
+
+    assertThat(errRownums).containsExactly(6);
+    assertThat(toOption.okRows()).isEqualTo(2);
+    assertThat(toOption.errRows()).isEqualTo(1);
+  }
+
   @Test
   public void readExcel2Beans() {
     List<Integer> errRownums = new ArrayList<>();
@@ -41,10 +87,10 @@ public class ValidateTest {
   @Test
   public void test() {
     VBean vb = new VBean().name("Bb1");
-    assertThat(ValidateUtil.validate(vb)).isNull();
+    assertThat(ValidateUtil.validate(null, vb)).isNull();
 
     vb = new VBean();
-    assertThat(ValidateUtil.validate(vb)).isEqualTo("姓名格式错误");
+    assertThat(ValidateUtil.validate(null, vb)).isEqualTo("姓名格式错误");
   }
 
   @XlsxValid(writeErrorToExcel = true, removeOKRows = true)
