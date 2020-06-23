@@ -64,14 +64,7 @@ public class Xlsx implements Closeable {
    */
   @SneakyThrows
   public <T> Xlsx fromBeans(List<T> beans, FromOption... fromOptions) {
-    if (workbook == null) {
-      workbook = new XSSFWorkbook();
-    }
     getSheet();
-
-    if (beans.isEmpty()) {
-      return this;
-    }
 
     val beanClass = beans.get(0).getClass();
     val fieldInfos = createFieldFieldInfoMap(beanClass);
@@ -103,9 +96,9 @@ public class Xlsx implements Closeable {
 
         cell.setCellValue(fieldValue.toString());
         cell.setCellStyle(fi.dataStyle());
-        sheet.setColumnWidth(col, sheet.getColumnWidth(startCol));
       }
 
+      sheet.setColumnWidth(col, sheet.getColumnWidth(startCol));
       col++;
     }
   }
@@ -130,10 +123,9 @@ public class Xlsx implements Closeable {
         continue;
       }
 
-      String cellValue = row.getCell(titleCol).getStringCellValue();
-
+      String title = row.getCell(titleCol).getStringCellValue();
       for (val entry : fieldInfos.entrySet()) {
-        if (cellValue.contains(entry.getValue().title())) {
+        if (title.contains(entry.getValue().title())) {
           rowIndexes.put(entry.getKey(), i);
           break;
         }
@@ -142,10 +134,11 @@ public class Xlsx implements Closeable {
 
     if (rowIndexes.size() == fieldInfos.size()) {
       for (val entry : fieldInfos.entrySet()) {
+        int rownum = rowIndexes.get(entry.getKey());
+
         FieldInfo fi = entry.getValue();
-        Integer rowIndex = rowIndexes.get(entry.getKey());
-        fi.index(rowIndex);
-        fi.dataStyle(sheet.getRow(rowIndex).getCell(titleCol).getCellStyle());
+        fi.index(rownum);
+        fi.dataStyle(sheet.getRow(rownum).getCell(titleCol).getCellStyle());
       }
 
       return true;
@@ -361,6 +354,10 @@ public class Xlsx implements Closeable {
   }
 
   private Sheet getSheet() {
+    if (workbook == null) {
+      workbook = new XSSFWorkbook();
+    }
+
     if (sheet == null) {
       if (workbook.getNumberOfSheets() == 0) {
         sheet = workbook.createSheet();
@@ -394,9 +391,7 @@ public class Xlsx implements Closeable {
   public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos) {
     ArrayList<Map<String, String>> beans = new ArrayList<>(10);
 
-    if (sheet == null) {
-      sheet = getSheet();
-    }
+    val sheet = getSheet();
     val fieldInfos = createFieldFieldInfoMap(titleInfos);
     int startRow = locateDataRowByTitle(fieldInfos);
 
@@ -418,10 +413,7 @@ public class Xlsx implements Closeable {
   public <T> List<T> toBeans(Class<T> beanClass) {
     ArrayList<T> beans = new ArrayList<>(10);
 
-    if (sheet == null) {
-      sheet = getSheet();
-    }
-
+    val sheet = getSheet();
     val fieldInfos = createFieldFieldInfoMap(beanClass);
     int startRow = locateDataRowByTitle(fieldInfos);
 
@@ -457,8 +449,7 @@ public class Xlsx implements Closeable {
       Cell cell = row.getCell(entry.getValue().index());
       if (cell != null) {
         String s = cell.getStringCellValue();
-        val field = entry.getKey();
-        field.set(t, s);
+        entry.getKey().set(t, s);
       }
     }
   }
@@ -473,8 +464,7 @@ public class Xlsx implements Closeable {
         continue;
       }
 
-      val titleInfo = entry.getKey();
-      map.put(titleInfo.mapKey(), cell.getStringCellValue());
+      map.put(entry.getKey().mapKey(), cell.getStringCellValue());
     }
 
     return map;
