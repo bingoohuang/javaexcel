@@ -31,11 +31,6 @@ public class WorkbookReader {
   }
 
   @SneakyThrows
-  public Workbook read(String fileName) {
-    return read(fileName, FileType.NORMAL);
-  }
-
-  @SneakyThrows
   public Workbook read(InputStream is) {
     return WorkbookFactory.create(is);
   }
