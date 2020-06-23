@@ -20,7 +20,7 @@ public class TemplateTest {
 
     String excel = "excels/test-template.xlsx";
 
-    new Xlsx().read("template.xlsx", CLASSPATH).fromBeans(beans).write(excel);
+    new Xlsx().autoClose(true).read("template.xlsx", CLASSPATH).fromBeans(beans).write(excel);
 
     List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
 
@@ -111,7 +111,7 @@ public class TemplateTest {
     private String area;
 
     @Override
-    public boolean shouldIgnored() {
+    public boolean shouldIgnore() {
       return area != null && area.startsWith("示例");
     }
   }

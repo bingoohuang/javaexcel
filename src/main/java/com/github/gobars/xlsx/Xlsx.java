@@ -25,6 +25,12 @@ public class Xlsx implements Closeable {
 
   private boolean autoClose = true;
 
+  /**
+   * 是否在readBeans或者write方法之后，自动关闭相关资源.
+   *
+   * @param autoClose 是否自动关闭.
+   * @return Xlsx
+   */
   public Xlsx autoClose(boolean autoClose) {
     this.autoClose = autoClose;
     return this;
@@ -55,7 +61,7 @@ public class Xlsx implements Closeable {
     getSheet();
 
     val beanClass = beans.get(0).getClass();
-    val fieldInfos = createFieldFieldInfoMap(beanClass);
+    val fieldInfos = createFieldInfoMap(beanClass);
 
     val option = fromOptions.length > 0 ? fromOptions[0] : new FromOption();
     if (option.horizontal()) {
@@ -216,17 +222,17 @@ public class Xlsx implements Closeable {
 
   private <T> boolean findAllTitles(Row row, Map<T, FieldInfo> fieldInfos) {
     Map<T, Integer> columnIndexes = new HashMap<>(fieldInfos.size());
-    for (val entry : fieldInfos.entrySet()) {
-      int titleColIndex = findTitleInRow(row, entry.getValue().title());
+    for (val i : fieldInfos.entrySet()) {
+      int titleColIndex = findTitleInRow(row, i.getValue().title());
       if (titleColIndex < 0) {
         return false;
       }
 
-      columnIndexes.put(entry.getKey(), titleColIndex);
+      columnIndexes.put(i.getKey(), titleColIndex);
     }
 
-    for (val entry : fieldInfos.entrySet()) {
-      entry.getValue().index(columnIndexes.get(entry.getKey()));
+    for (val i : fieldInfos.entrySet()) {
+      i.getValue().index(columnIndexes.get(i.getKey()));
     }
 
     return true;
@@ -243,22 +249,22 @@ public class Xlsx implements Closeable {
     return -1;
   }
 
-  private Map<Field, FieldInfo> createFieldFieldInfoMap(Class<?> beanClass) {
+  private Map<Field, FieldInfo> createFieldInfoMap(Class<?> beanClass) {
     Map<Field, FieldInfo> fieldInfos = new LinkedHashMap<>();
 
-    for (val field : beanClass.getDeclaredFields()) {
-      field.setAccessible(true);
-      prepareFieldInfos(fieldInfos, field);
+    for (val f : beanClass.getDeclaredFields()) {
+      f.setAccessible(true);
+      prepareFieldInfos(fieldInfos, f);
     }
 
     return fieldInfos;
   }
 
-  private Map<TitleInfo, FieldInfo> createFieldFieldInfoMap(List<TitleInfo> titleInfos) {
+  private Map<TitleInfo, FieldInfo> createFieldInfoMap(List<TitleInfo> titleInfos) {
     Map<TitleInfo, FieldInfo> fieldInfos = new LinkedHashMap<>();
 
-    for (val field : titleInfos) {
-      prepareFieldInfos(fieldInfos, field);
+    for (val f : titleInfos) {
+      prepareFieldInfos(fieldInfos, f);
     }
 
     return fieldInfos;
@@ -375,12 +381,11 @@ public class Xlsx implements Closeable {
    * @param titleInfos 标题信息
    * @return Map列表
    */
-  @SneakyThrows
   public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos) {
     ArrayList<Map<String, String>> beans = new ArrayList<>(10);
 
     val sh = getSheet();
-    val fieldInfos = createFieldFieldInfoMap(titleInfos);
+    val fieldInfos = createFieldInfoMap(titleInfos);
     int startRow = locateDataRowByTitle(fieldInfos);
 
     for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
@@ -402,27 +407,32 @@ public class Xlsx implements Closeable {
     ArrayList<T> beans = new ArrayList<>(10);
 
     val sh = getSheet();
-    val fieldInfos = createFieldFieldInfoMap(beanClass);
+    val fieldInfos = createFieldInfoMap(beanClass);
     int startRow = locateDataRowByTitle(fieldInfos);
 
     for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
       T t = beanClass.getConstructor().newInstance();
       readRow(t, fieldInfos, sh.getRow(i));
 
-      if (t instanceof IgnoreAware && ((IgnoreAware) t).shouldIgnored()) {
-        continue;
+      if (!shouldIgnore(t)) {
+        setRownum(t, i);
+        beans.add(t);
       }
-
-      if (t instanceof RownumAware) {
-        ((RownumAware) t).setRownum(i);
-      }
-
-      beans.add(t);
     }
 
     autoClose();
 
     return beans;
+  }
+
+  private <T> boolean shouldIgnore(T t) {
+    return t instanceof IgnoreAware && ((IgnoreAware) t).shouldIgnore();
+  }
+
+  private <T> void setRownum(T t, int rownum) {
+    if (t instanceof RownumAware) {
+      ((RownumAware) t).setRownum(rownum);
+    }
   }
 
   private void autoClose() {
@@ -442,7 +452,6 @@ public class Xlsx implements Closeable {
     }
   }
 
-  @SneakyThrows
   private Map<String, String> readMap(Map<TitleInfo, FieldInfo> fieldInfos, Row row) {
     Map<String, String> map = new HashMap<>(fieldInfos.size());
 
@@ -508,7 +517,9 @@ public class Xlsx implements Closeable {
   }
 
   /**
-   * 写入到Http响应中提供下载.
+   * 写入到Http响应流中提供下载.
+   *
+   * <p>注意：调用完此方法后，请不要再往输出流中写入其它数据，否则会导致excel下载文件错误.
    *
    * @param fileName 下载文件名
    * @param r HTTP响应流
@@ -529,21 +540,30 @@ public class Xlsx implements Closeable {
    * 指定写入的模板文件，或者需要读取的文件.
    *
    * @param fileName 文件名
-   * @param fileType  文件类型
+   * @param fileType 文件类型
    * @return Xlsx
    */
-  @SneakyThrows
   public Xlsx read(String fileName, FileType fileType) {
     this.workbook = WorkbookReader.read(fileName, fileType);
     return this;
   }
 
-  @SneakyThrows
+  /**
+   * 从本地文件指定写入的模板文件，或者需要读取的文件.
+   *
+   * @param fileName 文件名
+   * @return Xlsx
+   */
   public Xlsx read(String fileName) {
     return read(fileName, FileType.NORMAL);
   }
 
-  @SneakyThrows
+  /**
+   * 从输入流指定写入的模板文件，或者需要读取的文件.
+   *
+   * @param is 输入流
+   * @return Xlsx
+   */
   public Xlsx read(InputStream is) {
     this.workbook = WorkbookReader.read(is);
     return this;

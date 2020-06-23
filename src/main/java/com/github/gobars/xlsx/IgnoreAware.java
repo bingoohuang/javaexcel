@@ -11,5 +11,5 @@ public interface IgnoreAware {
    *
    * @return true 忽略
    */
-  boolean shouldIgnored();
+  boolean shouldIgnore();
 }
