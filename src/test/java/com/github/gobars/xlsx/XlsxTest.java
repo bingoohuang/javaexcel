@@ -4,16 +4,15 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import static com.github.gobars.xlsx.U.listOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class XlsxTest {
   @Test
   public void rows() {
-    List<RowBean> rows = new ArrayList<>();
-    rows.add(new RowBean().name("黄进兵"));
+    List<RowBean> rows = listOf(new RowBean().name("黄进兵"));
 
     String excel = "excels/test-rowsbean.xlsx";
     new Xlsx().fromBeans(rows).write(excel);
@@ -24,8 +23,7 @@ public class XlsxTest {
 
   @Test
   public void rows2() {
-    List<RowBean2> rows = new ArrayList<>();
-    rows.add(new RowBean2().name("黄进兵"));
+    List<RowBean2> rows = listOf(new RowBean2().name("黄进兵"));
 
     String excel = "excels/test-rowsbean2.xlsx";
 
@@ -38,9 +36,8 @@ public class XlsxTest {
 
   @Test
   public void rows3() {
-    List<RowBean3> rows = new ArrayList<>();
-    rows.add(new RowBean3().name("黄进兵").city("海淀区"));
-    rows.add(new RowBean3().name("兵进黄").city("西城区"));
+    List<RowBean3> rows =
+        listOf(new RowBean3().name("黄进兵").city("海淀区"), new RowBean3().name("兵进黄").city("西城区"));
 
     String excel = "excels/test-rowsbean3.xlsx";
 

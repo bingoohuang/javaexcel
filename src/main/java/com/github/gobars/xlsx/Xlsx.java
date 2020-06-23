@@ -8,7 +8,10 @@ import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.Closeable;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.*;
@@ -19,6 +22,13 @@ public class Xlsx implements Closeable {
 
   private Workbook styleWorkbook;
   private Sheet styleSheet;
+
+  private boolean autoClose = true;
+
+  public Xlsx autoClose(boolean autoClose) {
+    this.autoClose = autoClose;
+    return this;
+  }
 
   /**
    * 指定写入的模板文件.
@@ -57,13 +67,13 @@ public class Xlsx implements Closeable {
     if (workbook == null) {
       workbook = new XSSFWorkbook();
     }
+    getSheet();
 
     if (beans.isEmpty()) {
       return this;
     }
 
     val beanClass = beans.get(0).getClass();
-    sheet = getSheet();
     val fieldInfos = createFieldFieldInfoMap(beanClass);
 
     val option = fromOptions.length > 0 ? fromOptions[0] : new FromOption();
@@ -83,9 +93,7 @@ public class Xlsx implements Closeable {
 
     for (val bean : beans) {
       for (val entry : fieldInfos.entrySet()) {
-        Field field = entry.getKey();
-        field.setAccessible(true);
-        Object fieldValue = field.get(bean);
+        Object fieldValue = entry.getKey().get(bean);
         if (fieldValue == null) {
           fieldValue = "";
         }
@@ -105,11 +113,7 @@ public class Xlsx implements Closeable {
   private int locateDataColByTitle(Map<Field, FieldInfo> fieldInfos) {
     for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
       int titleCol = findAnyTitle(sheet.getRow(i), fieldInfos);
-      if (titleCol < 0) {
-        continue;
-      }
-
-      if (testTitleCol(titleCol, fieldInfos)) {
+      if (titleCol >= 0 && testTitleCol(titleCol, fieldInfos)) {
         return titleCol;
       }
     }
@@ -143,6 +147,7 @@ public class Xlsx implements Closeable {
         fi.index(rowIndex);
         fi.dataStyle(sheet.getRow(rowIndex).getCell(titleCol).getCellStyle());
       }
+
       return true;
     }
 
@@ -152,10 +157,8 @@ public class Xlsx implements Closeable {
   private <T> void writeVertical(Map<Field, FieldInfo> fieldInfos, List<T> beans) {
     int startRow = locateDataRowByTitle(fieldInfos);
 
-    Row row = sheet.createRow(startRow);
-
     if (startRow == 0) {
-      writeTileRow(fieldInfos, row);
+      writeTileRow(fieldInfos, sheet.createRow(startRow));
       startRow = 1;
     }
 
@@ -202,7 +205,7 @@ public class Xlsx implements Closeable {
       return;
     }
 
-    val firstFieldInfo = fieldInfos.values().iterator().next();
+    val firstFieldInfo = getFirstFieldInfo(fieldInfos);
     Cell dataCell = dataRow.getCell(firstFieldInfo.index());
     if (dataCell == null) {
       return;
@@ -263,8 +266,10 @@ public class Xlsx implements Closeable {
     Map<Field, FieldInfo> fieldInfos = new LinkedHashMap<>();
 
     for (val field : beanClass.getDeclaredFields()) {
+      field.setAccessible(true);
       prepareFieldInfos(fieldInfos, field);
     }
+
     return fieldInfos;
   }
 
@@ -274,6 +279,7 @@ public class Xlsx implements Closeable {
     for (val field : titleInfos) {
       prepareFieldInfos(fieldInfos, field);
     }
+
     return fieldInfos;
   }
 
@@ -329,7 +335,6 @@ public class Xlsx implements Closeable {
 
   @SneakyThrows
   private <T> void writeCell(Row row, T bean, FieldInfo fi, Field field) {
-    field.setAccessible(true);
     Object fieldValue = field.get(bean);
     if (fieldValue == null) {
       fieldValue = "";
@@ -356,15 +361,15 @@ public class Xlsx implements Closeable {
   }
 
   private Sheet getSheet() {
-    if (sheet != null) {
-      return sheet;
+    if (sheet == null) {
+      if (workbook.getNumberOfSheets() == 0) {
+        sheet = workbook.createSheet();
+      } else {
+        sheet = workbook.getSheetAt(0);
+      }
     }
 
-    if (workbook.getNumberOfSheets() == 0) {
-      workbook.createSheet();
-    }
-
-    return workbook.getSheetAt(0);
+    return sheet;
   }
 
   private String getTitle(XlsxCol xlsxCol) {
@@ -435,22 +440,26 @@ public class Xlsx implements Closeable {
       beans.add(t);
     }
 
+    autoClose();
+
     return beans;
+  }
+
+  private void autoClose() {
+    if (this.autoClose) {
+      close();
+    }
   }
 
   @SneakyThrows
   private <T> void readRow(T t, Map<Field, FieldInfo> fieldInfos, Row row) {
     for (val entry : fieldInfos.entrySet()) {
       Cell cell = row.getCell(entry.getValue().index());
-      if (cell == null) {
-        continue;
+      if (cell != null) {
+        String s = cell.getStringCellValue();
+        val field = entry.getKey();
+        field.set(t, s);
       }
-
-      String s = cell.getStringCellValue();
-
-      val field = entry.getKey();
-      field.setAccessible(true);
-      field.set(t, s);
     }
   }
 
@@ -503,6 +512,8 @@ public class Xlsx implements Closeable {
   @SneakyThrows
   public Xlsx write(OutputStream out) {
     workbook.write(out);
+    autoClose();
+
     return this;
   }
 
@@ -544,8 +555,7 @@ public class Xlsx implements Closeable {
 
   @SneakyThrows
   public Xlsx read(String fileName) {
-    this.workbook = WorkbookReader.read(fileName, FileType.NORMAL);
-    return this;
+    return read(fileName, FileType.NORMAL);
   }
 
   @SneakyThrows
@@ -556,16 +566,11 @@ public class Xlsx implements Closeable {
 
   @Override
   public void close() {
-    if (this.workbook != null) {
-      closeQuietly(this.workbook);
-    }
-  }
-
-  private void closeQuietly(Closeable closeable) {
-    try {
-      closeable.close();
-    } catch (IOException e) {
-      // ignore
-    }
+    Util.closeQuietly(this.workbook);
+    Util.closeQuietly(this.styleWorkbook);
+    this.workbook = null;
+    this.styleWorkbook = null;
+    this.sheet = null;
+    this.styleSheet = null;
   }
 }
