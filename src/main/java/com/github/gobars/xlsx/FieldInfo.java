@@ -13,6 +13,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 @Accessors(fluent = true)
 public class FieldInfo {
   private String title;
+  private String ignoreRow;
 
   private CellStyle titleStyle;
   private CellStyle dataStyle;

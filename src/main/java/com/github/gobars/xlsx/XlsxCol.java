@@ -26,6 +26,13 @@ public @interface XlsxCol {
   String value() default "";
 
   /**
+   * 包含指定值时，忽略行
+   *
+   * @return 包含值时，忽略行，例如: "示例-"
+   */
+  String ignoreRow() default "";
+
+  /**
    * 标题样式在模板样式中参考单元格.
    *
    * @return 单元格引用，例如A1

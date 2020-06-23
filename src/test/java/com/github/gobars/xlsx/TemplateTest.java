@@ -72,14 +72,6 @@ public class TemplateTest {
         .protect("123456")
         .write("excels/test-horizontal-123456.xlsx");
 
-    List<HBean> hbeans = new Xlsx().read("excels/test-horizontal.xlsx").toBeans(HBean.class);
-    assertThat(hbeans)
-        .containsExactly(
-            new HBean().area("示例-海淀区").blood("示例-140/90").rownum(3),
-            new HBean().area("西城").blood("135/90").rownum(4),
-            new HBean().area("东城").blood("140/95").rownum(5),
-            new HBean().area("南城").blood("133/85").rownum(6));
-
     List<IgnoreBean> ibeans =
         new Xlsx().read("excels/test-horizontal.xlsx").toBeans(IgnoreBean.class);
     assertThat(ibeans)
@@ -89,31 +81,9 @@ public class TemplateTest {
 
   @Data
   @Accessors(fluent = true)
-  public static class HBean implements RownumAware {
-    @XlsxCol(title = "地区")
+  public static class IgnoreBean {
+    @XlsxCol(title = "地区", ignoreRow = "示例-")
     private String area;
-
-    @XlsxCol(title = "血压")
-    private String blood;
-
-    private int rownum;
-
-    @Override
-    public void setRownum(int rownum) {
-      this.rownum = rownum;
-    }
-  }
-
-  @Data
-  @Accessors(fluent = true)
-  public static class IgnoreBean implements IgnoreAware {
-    @XlsxCol(title = "地区")
-    private String area;
-
-    @Override
-    public boolean shouldIgnore() {
-      return area != null && area.startsWith("示例");
-    }
   }
 
   @Data
