@@ -11,7 +11,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 
 @UtilityClass
-public class WorkbookReader {
+public class XlsxReader {
   @SneakyThrows
   public Workbook read(String fileName, FileType fileType) {
     switch (fileType) {

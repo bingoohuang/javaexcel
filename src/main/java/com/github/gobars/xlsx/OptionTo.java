@@ -5,7 +5,7 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(fluent = true)
-public class ToOption {
+public class OptionTo {
   private int okRows;
   private int errRows;
 

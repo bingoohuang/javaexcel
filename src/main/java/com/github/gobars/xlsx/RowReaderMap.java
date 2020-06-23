@@ -8,9 +8,9 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapRowToBeans extends AbstractRowToBeans<Map<String, String>, TitleInfo> {
-  public MapRowToBeans(Workbook workbook) {
-    super(workbook);
+class RowReaderMap extends RowReader<Map<String, String>, TitleInfo> {
+  public RowReaderMap(Workbook workbook, Map<TitleInfo, FieldInfo> fieldInfos) {
+    super(workbook, fieldInfos);
   }
 
   @Override
@@ -19,8 +19,7 @@ public class MapRowToBeans extends AbstractRowToBeans<Map<String, String>, Title
   }
 
   @Override
-  public boolean readRow(
-      Map<String, String> map, Map<TitleInfo, FieldInfo> fieldInfos, Row row, ToOption toOption) {
+  public boolean readRow(Map<String, String> map, Row row, OptionTo optionTo) {
     for (val entry : fieldInfos.entrySet()) {
       Cell cell = row.getCell(entry.getValue().index());
       if (cell == null) {

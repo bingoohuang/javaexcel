@@ -9,11 +9,11 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-public class BeanRowToBeans<T> extends AbstractRowToBeans<T, Field> {
+class RowReaderBean<T> extends RowReader<T, Field> {
   private final Class<T> beanClass;
 
-  public BeanRowToBeans(Workbook workbook, Class<T> beanClass) {
-    super(workbook);
+  public RowReaderBean(Workbook workbook, Map<Field, FieldInfo> fieldInfos, Class<T> beanClass) {
+    super(workbook, fieldInfos);
     this.beanClass = beanClass;
   }
 
@@ -25,7 +25,7 @@ public class BeanRowToBeans<T> extends AbstractRowToBeans<T, Field> {
 
   @Override
   @SneakyThrows
-  public boolean readRow(T t, Map<Field, FieldInfo> fieldInfos, Row row, ToOption toOption) {
+  public boolean readRow(T t, Row row, OptionTo optionTo) {
     for (val entry : fieldInfos.entrySet()) {
       Cell cell = row.getCell(entry.getValue().index());
       if (cell == null) {

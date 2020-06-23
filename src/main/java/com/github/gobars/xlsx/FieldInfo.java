@@ -11,7 +11,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
  */
 @Data
 @Accessors(fluent = true)
-public class FieldInfo {
+class FieldInfo {
   private String title;
   private String ignoreRow;
 

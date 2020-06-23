@@ -22,10 +22,10 @@ public class TitleInfo {
   private String mapKey;
 
   public static List<TitleInfo> create(Map<String, String> map) {
-    List<TitleInfo> l = new ArrayList<>(map.size());
+    val l = new ArrayList<TitleInfo>(map.size());
 
-    for (val entry : map.entrySet()) {
-      l.add(new TitleInfo().title(entry.getKey()).mapKey(entry.getValue()));
+    for (val i : map.entrySet()) {
+      l.add(new TitleInfo().title(i.getKey()).mapKey(i.getValue()));
     }
 
     return l;

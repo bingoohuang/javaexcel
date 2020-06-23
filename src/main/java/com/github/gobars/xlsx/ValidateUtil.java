@@ -11,15 +11,15 @@ import java.util.*;
 
 @Slf4j
 @UtilityClass
-public class ValidateUtil {
+class ValidateUtil {
   @SuppressWarnings("unchecked")
-  public String validate(ToOption toOption, Object obj) {
+  public String validate(OptionTo optionTo, Object obj) {
     if (obj == null) {
       return null;
     }
 
-    if (toOption != null && toOption.validatable() != null) {
-      return toOption.validatable().validate(null, obj);
+    if (optionTo != null && optionTo.validatable() != null) {
+      return optionTo.validatable().validate(null, obj);
     }
 
     if (!(obj instanceof Map) && !obj.getClass().isAnnotationPresent(XlsxValid.class)) {

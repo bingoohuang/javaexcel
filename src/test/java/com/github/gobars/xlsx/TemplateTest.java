@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.github.gobars.xlsx.FileType.CLASSPATH;
-import static com.github.gobars.xlsx.U.listOf;
-import static com.github.gobars.xlsx.U.mapOf;
+import static com.github.gobars.xlsx.Util.listOf;
+import static com.github.gobars.xlsx.Util.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class TemplateTest {
@@ -38,7 +38,7 @@ public class TemplateTest {
 
     new Xlsx()
         .read("template-horizontal.xlsx", CLASSPATH)
-        .fromBeans(bs, new FromOption().horizontal(true))
+        .fromBeans(bs, new OptionFrom().horizontal(true))
         .write("excels/test-horizontal.xlsx");
 
     List<HorizontalBean> read =
@@ -68,7 +68,7 @@ public class TemplateTest {
 
     new Xlsx()
         .read("template-horizontal.xlsx", CLASSPATH)
-        .fromBeans(bs, new FromOption().horizontal(true))
+        .fromBeans(bs, new OptionFrom().horizontal(true))
         .protect("123456")
         .write("excels/test-horizontal-123456.xlsx");
 

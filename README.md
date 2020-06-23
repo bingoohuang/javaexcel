@@ -136,7 +136,7 @@ XlsxValidatable<Map<String, String>> validatable =
 XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
     bean -> Util.contains(bean.get("area"), "示例-");
 
-ToOption toOption =
+ToOption optionTo =
     new ToOption()
         // 将错误标识在Excel行末
         .writeErrorToExcel(true)
@@ -147,7 +147,7 @@ ToOption toOption =
 List<TitleInfo> titleInfos =
     TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
 
-List<Map<String, String>> maps = xlsx.toBeans(titleInfos, toOption);
+List<Map<String, String>> maps = xlsx.toBeans(titleInfos, optionTo);
 xlsx.write("excels/test-validate-map.xlsx");
 ```
 

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.github.gobars.xlsx.FileType.CLASSPATH;
-import static com.github.gobars.xlsx.U.mapOf;
+import static com.github.gobars.xlsx.Util.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class ValidateTest {
@@ -35,10 +35,10 @@ public class ValidateTest {
           errRownums.add(rownum);
         };
     XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
-        bean -> Util.contains(bean.get("area"), "示例-");
+        map -> Util.contains(map.get("area"), "示例-");
 
-    ToOption toOption =
-        new ToOption()
+    OptionTo optionTo =
+        new OptionTo()
             // 将错误标识在Excel行末
             .writeErrorToExcel(true)
             .errCallback(errCallback)
@@ -49,7 +49,7 @@ public class ValidateTest {
     List<TitleInfo> titleInfos =
         TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
 
-    List<Map<String, String>> maps = xlsx.toBeans(titleInfos, toOption);
+    List<Map<String, String>> maps = xlsx.toBeans(titleInfos, optionTo);
     assertThat(maps)
         .containsExactly(
             mapOf("area", "西城", "blood", "135/90", "gender", "男"),
@@ -58,8 +58,8 @@ public class ValidateTest {
     xlsx.write("excels/test-validate-map.xlsx");
 
     assertThat(errRownums).containsExactly(6);
-    assertThat(toOption.okRows()).isEqualTo(2);
-    assertThat(toOption.errRows()).isEqualTo(1);
+    assertThat(optionTo.okRows()).isEqualTo(2);
+    assertThat(optionTo.errRows()).isEqualTo(1);
   }
 
   @Test
@@ -67,19 +67,19 @@ public class ValidateTest {
     List<Integer> errRownums = new ArrayList<>();
 
     Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
-    ToOption toOption =
-        new ToOption()
+    OptionTo optionTo =
+        new OptionTo()
             .errCallback(
                 (XlsxValidErrCallback<XBean>)
                     (xBean, errMsg, rownum) -> {
                       errRownums.add(rownum);
                     });
-    List<XBean> vBeans = xlsx.toBeans(XBean.class, toOption);
+    List<XBean> vBeans = xlsx.toBeans(XBean.class, optionTo);
     xlsx.write("excels/test-validate.xlsx");
 
     assertThat(errRownums).containsExactly(6);
-    assertThat(toOption.okRows()).isEqualTo(2);
-    assertThat(toOption.errRows()).isEqualTo(1);
+    assertThat(optionTo.okRows()).isEqualTo(2);
+    assertThat(optionTo.errRows()).isEqualTo(1);
     assertThat(vBeans)
         .containsExactly(
             new XBean().area("西城").blood("135/90").gender("男"),

@@ -9,7 +9,7 @@ import java.util.List;
 import static java.util.Comparator.reverseOrder;
 
 @UtilityClass
-public class Poi {
+class Poi {
   public void removeRows(Sheet sheet, List<Integer> rows) {
     rows.stream().sorted(reverseOrder()).forEach(r -> removeRow(sheet, r));
   }
