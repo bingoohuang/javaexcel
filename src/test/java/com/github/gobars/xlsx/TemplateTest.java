@@ -20,7 +20,7 @@ public class TemplateTest {
 
     String excel = "excels/test-template.xlsx";
 
-    new Xlsx().template("template.xlsx", CLASSPATH).fromBeans(beans).write(excel);
+    new Xlsx().read("template.xlsx", CLASSPATH).fromBeans(beans).write(excel);
 
     List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
 
@@ -37,7 +37,7 @@ public class TemplateTest {
             new TitleBean().title("学校").sample("示例-蓝翔").d1("东大").d2("西大").d3("北大"));
 
     new Xlsx()
-        .template("template-horizontal.xlsx", CLASSPATH)
+        .read("template-horizontal.xlsx", CLASSPATH)
         .fromBeans(bs, new FromOption().horizontal(true))
         .write("excels/test-horizontal.xlsx");
 
@@ -67,7 +67,7 @@ public class TemplateTest {
             mapOf("area", "南城", "blood", "133/85", "gender", "未知", "school", "北大"));
 
     new Xlsx()
-        .template("template-horizontal.xlsx", CLASSPATH)
+        .read("template-horizontal.xlsx", CLASSPATH)
         .fromBeans(bs, new FromOption().horizontal(true))
         .protect("123456")
         .write("excels/test-horizontal-123456.xlsx");

@@ -31,18 +31,6 @@ public class Xlsx implements Closeable {
   }
 
   /**
-   * 指定写入的模板文件.
-   *
-   * @param fileName 模板文件名
-   * @param fileType 模板文件类型
-   * @return Xlsx
-   */
-  public Xlsx template(String fileName, FileType fileType) {
-    this.workbook = WorkbookReader.read(fileName, fileType);
-    return this;
-  }
-
-  /**
    * 指定样式文件.
    *
    * @param fileName 样式文件名
@@ -391,12 +379,12 @@ public class Xlsx implements Closeable {
   public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos) {
     ArrayList<Map<String, String>> beans = new ArrayList<>(10);
 
-    val sheet = getSheet();
+    val sh = getSheet();
     val fieldInfos = createFieldFieldInfoMap(titleInfos);
     int startRow = locateDataRowByTitle(fieldInfos);
 
-    for (int i = startRow, ii = sheet.getLastRowNum(); i <= ii; ++i) {
-      beans.add(readMap(fieldInfos, sheet.getRow(i)));
+    for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
+      beans.add(readMap(fieldInfos, sh.getRow(i)));
     }
 
     return beans;
@@ -413,13 +401,13 @@ public class Xlsx implements Closeable {
   public <T> List<T> toBeans(Class<T> beanClass) {
     ArrayList<T> beans = new ArrayList<>(10);
 
-    val sheet = getSheet();
+    val sh = getSheet();
     val fieldInfos = createFieldFieldInfoMap(beanClass);
     int startRow = locateDataRowByTitle(fieldInfos);
 
-    for (int i = startRow, ii = sheet.getLastRowNum(); i <= ii; ++i) {
+    for (int i = startRow, ii = sh.getLastRowNum(); i <= ii; ++i) {
       T t = beanClass.getConstructor().newInstance();
-      readRow(t, fieldInfos, sheet.getRow(i));
+      readRow(t, fieldInfos, sh.getRow(i));
 
       if (t instanceof IgnoreAware && ((IgnoreAware) t).shouldIgnored()) {
         continue;
@@ -537,6 +525,13 @@ public class Xlsx implements Closeable {
     return write(out);
   }
 
+  /**
+   * 指定写入的模板文件，或者需要读取的文件.
+   *
+   * @param fileName 文件名
+   * @param fileType 文件类型
+   * @return Xlsx
+   */
   @SneakyThrows
   public Xlsx read(String fileName, FileType fileType) {
     this.workbook = WorkbookReader.read(fileName, fileType);
