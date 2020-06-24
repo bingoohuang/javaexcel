@@ -10,6 +10,20 @@ binding between java beans and excel rows based on poi.
 
 ## Usage
 
+### 使用场景列表
+
+| 场景                                                             | 目标                    | API示例                                                                                                                                                         |
+|----------------------------------------------------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Excel按列头读                                                     | JavaBean列表            | \`new Xlsx\(\)\.read\(excel\)\.toBeans\(RowBean\.class\)`                                                                                                     |
+| Excel按列头读                                                     | Map<String, String>列表 | \`new Xlsx\(\)\.read\(excels\)\.toBeans\(XlsxTitle\.create\(mapOf\("地区", "area", "性别", "gender", "血压", "blood"\)\)\)`                                         |
+| Excel按列头写                                                     | JavaBean列表            | \`new Xlsx\(\)\.fromBeans\(rows\)\.write\(excel\)`                                                                                                            |
+| Excel按列头写                                                     | Map<String, String>列表 | \`new Xlsx\(\)\.read\("tmpl\.xlsx", CLASSPATH\)\.fromBeans\(titles, maps\)\.write\("result\.xlsx"\)`                                                          |
+| Excel按列头写（指定样式）                                          | JavaBean列表            | \`new Xlsx\(\)\.style\("style\.xlsx", CLASSPATH\)\.fromBeans\(rows\)\.write\(excel\)`                                                                         |
+| Excel按列头写（指定样式）                                        | Map<String, String>列表 | \`new Xlsx\(\)\.style\("style\.xlsx", CLASSPATH\)\.fromBeans\(titles, maps, new XlsxOptionFrom\(\)\.titleStyle\("A1"\)\.dataStyle\("A2"\)\)\.write\(excels\)` |
+| 上传，从\`@RequestParam\("file"\) MultipartFile f`中读 | \-                    | \`new Xlsx\(\)\.read\(f\.getInputStream\(\)\)\.\.\.`                                                                                                          |
+| 下载，向\`HttpServletResponse response`中写                 | \-                    | \`new Xlsx\(\)\.fromBeans\(rows\)\.write\("下载\.xlsx", response\)`                                                                                             |
+
+
 ### JavaBean读取
 
 ![image](https://user-images.githubusercontent.com/1940588/85396427-51265a80-b584-11ea-8ddf-c6bf39c5ed2b.png)
