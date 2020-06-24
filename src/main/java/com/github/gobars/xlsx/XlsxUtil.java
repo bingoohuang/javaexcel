@@ -30,10 +30,10 @@ public class XlsxUtil {
     return s != null && s.length() > 0;
   }
 
-  public void closeQuietly(Closeable closeable) {
-    if (closeable != null) {
+  public void closeQuietly(Object closeable) {
+    if (closeable instanceof Closeable) {
       try {
-        closeable.close();
+        ((Closeable) closeable).close();
       } catch (IOException e) {
         // ignore
       }
@@ -97,20 +97,24 @@ public class XlsxUtil {
     }
 
     switch (cell.getCellType()) {
-      case NUMERIC:
-        return String.valueOf(cell.getNumericCellValue());
-      case BLANK:
+      case Cell.CELL_TYPE_NUMERIC:
+        return fmt(cell.getNumericCellValue());
+      case Cell.CELL_TYPE_BLANK:
         return "";
-      case BOOLEAN:
+      case Cell.CELL_TYPE_BOOLEAN:
         return String.valueOf(cell.getBooleanCellValue());
-      case FORMULA:
+      case Cell.CELL_TYPE_FORMULA:
         return getFormulaValue(cell);
-      case ERROR:
+      case Cell.CELL_TYPE_ERROR:
         return FormulaError.forInt(cell.getErrorCellValue()).getString();
-      case STRING:
+      case Cell.CELL_TYPE_STRING:
       default:
         return trimToEmpty(cell.getStringCellValue());
     }
+  }
+
+  public String fmt(double d) {
+    return d == (long) d ? String.format("%d", (long) d) : String.format("%s", d);
   }
 
   private String getFormulaValue(Cell cell) {

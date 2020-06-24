@@ -170,3 +170,8 @@ xlsx.write("excels/test-validate-map.xlsx");
 错误提示的excel:
 
 ![image](https://user-images.githubusercontent.com/1940588/85397426-1b827100-b586-11ea-9c59-cfa7c140078b.png)
+
+
+## Others
+
+1. maven collect all the dependent jars `mvn clean dependency:copy-dependencies`
