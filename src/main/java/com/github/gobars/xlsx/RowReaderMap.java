@@ -26,8 +26,7 @@ class RowReaderMap extends RowReader<Map<String, String>, XlsxTitle> {
         continue;
       }
 
-      String s = cell.getStringCellValue();
-
+      String s = XlsxUtil.getCellValue(cell);
       map.put(entry.getKey().mapKey(), s);
     }
 

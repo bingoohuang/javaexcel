@@ -154,7 +154,7 @@ public class Xlsx implements Closeable {
         continue;
       }
 
-      String title = row.getCell(titleCol).getStringCellValue();
+      String title = XlsxUtil.getCellValue(row.getCell(titleCol));
       for (val entry : fieldInfos.entrySet()) {
         if (title.contains(entry.getValue().title())) {
           rowIndexes.put(entry.getKey(), i);
@@ -284,8 +284,8 @@ public class Xlsx implements Closeable {
 
   private int findTitleInRow(Row row, String title) {
     for (int i = 0, ii = row.getLastCellNum(); i < ii; i++) {
-      Cell cell = row.getCell(i);
-      if (cell != null && cell.getStringCellValue().contains(title)) {
+      Cell c = row.getCell(i);
+      if (XlsxUtil.contains(XlsxUtil.getCellValue(c), title)) {
         return i;
       }
     }

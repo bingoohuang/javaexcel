@@ -3,6 +3,8 @@ package com.github.gobars.xlsx;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import java.io.Closeable;
@@ -14,6 +16,12 @@ import static java.util.Comparator.reverseOrder;
 @Slf4j
 @UtilityClass
 public class XlsxUtil {
+  public final String EMPTY = "";
+
+  public String trimToEmpty(final String str) {
+    return str == null ? EMPTY : str.trim();
+  }
+
   public boolean isEmpty(String s) {
     return s == null || s.length() == 0;
   }
@@ -80,6 +88,44 @@ public class XlsxUtil {
       if (r != null) {
         sheet.removeRow(r);
       }
+    }
+  }
+
+  public String getCellValue(Cell cell) {
+    if (cell == null) {
+      return null;
+    }
+
+    switch (cell.getCellType()) {
+      case NUMERIC:
+        return String.valueOf(cell.getNumericCellValue());
+      case BLANK:
+        return "";
+      case BOOLEAN:
+        return String.valueOf(cell.getBooleanCellValue());
+      case FORMULA:
+        return getFormulaValue(cell);
+      case ERROR:
+        return FormulaError.forInt(cell.getErrorCellValue()).getString();
+      case STRING:
+      default:
+        return trimToEmpty(cell.getStringCellValue());
+    }
+  }
+
+  private String getFormulaValue(Cell cell) {
+    try {
+      return cell.getSheet()
+          .getWorkbook()
+          .getCreationHelper()
+          .createFormulaEvaluator()
+          .evaluate(cell)
+          .getStringValue();
+    } catch (Exception e) {
+      log.warn(
+          "get formula cell value[{}, {}] error : ", cell.getRowIndex(), cell.getColumnIndex(), e);
+
+      return null;
     }
   }
 }

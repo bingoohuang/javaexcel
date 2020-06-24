@@ -32,7 +32,7 @@ class RowReaderBean<T> extends RowReader<T, Field> {
         continue;
       }
 
-      String s = cell.getStringCellValue();
+      String s = XlsxUtil.getCellValue(cell);
       String ignoreRow = entry.getValue().ignoreRow();
       if (XlsxUtil.isNotEmpty(ignoreRow) && XlsxUtil.contains(s, ignoreRow)) {
         return false;
