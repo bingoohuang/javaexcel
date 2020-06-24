@@ -1,9 +1,9 @@
 package com.github.gobars.xlsxtest;
 
-import com.github.gobars.xlsx.XlsxOptionFrom;
-import com.github.gobars.xlsx.XlsxTitle;
 import com.github.gobars.xlsx.Xlsx;
 import com.github.gobars.xlsx.XlsxCol;
+import com.github.gobars.xlsx.XlsxOptionFrom;
+import com.github.gobars.xlsx.XlsxTitle;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.junit.Test;

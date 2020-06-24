@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 public class Xlsx implements Closeable {
   boolean autoClose = true;
@@ -60,7 +59,7 @@ public class Xlsx implements Closeable {
    */
   @SneakyThrows
   public Xlsx fromBeans(
-          List<XlsxTitle> titleInfos, List<Map<String, String>> maps, XlsxOptionFrom... options) {
+      List<XlsxTitle> titleInfos, List<Map<String, String>> maps, XlsxOptionFrom... options) {
     getSheet();
 
     val option = options.length > 0 ? options[0] : new XlsxOptionFrom();
@@ -88,22 +87,19 @@ public class Xlsx implements Closeable {
     return writeInternal(beans, option, fieldInfos);
   }
 
-  private <T, K> Xlsx writeInternal(List<T> maps, XlsxOptionFrom option, Map<K, FieldInfo> fieldInfos) {
-    int rowIndex = 0;
+  private <T, K> Xlsx writeInternal(
+      List<T> maps, XlsxOptionFrom option, Map<K, FieldInfo> fieldInfos) {
     if (option.horizontal()) {
-      rowIndex = writeHorizontal(fieldInfos, maps);
+      writeHorizontal(fieldInfos, maps);
     } else {
-      rowIndex = writeVertical(fieldInfos, maps);
+      writeVertical(fieldInfos, maps);
     }
-
-    int lastCellNum = sheet.getRow(rowIndex).getLastCellNum();
-    IntStream.range(0, lastCellNum).forEach(sheet::autoSizeColumn);
 
     return this;
   }
 
   @SneakyThrows
-  private <T, K> int writeHorizontal(Map<K, FieldInfo> fieldInfos, List<T> beans) {
+  private <T, K> void writeHorizontal(Map<K, FieldInfo> fieldInfos, List<T> beans) {
     int startCol = locateDataColByTitle(fieldInfos);
     int col = startCol;
 
@@ -124,8 +120,6 @@ public class Xlsx implements Closeable {
       sheet.setColumnWidth(col, sheet.getColumnWidth(startCol));
       col++;
     }
-
-    return getFirstFieldInfo(fieldInfos).index();
   }
 
   @SneakyThrows
@@ -184,7 +178,7 @@ public class Xlsx implements Closeable {
     return false;
   }
 
-  private <T, K> int writeVertical(Map<K, FieldInfo> fieldInfos, List<T> beans) {
+  private <T, K> void writeVertical(Map<K, FieldInfo> fieldInfos, List<T> beans) {
     int startRow = locateDataRowByTitle(fieldInfos);
 
     if (startRow == 0) {
@@ -195,8 +189,6 @@ public class Xlsx implements Closeable {
     for (val bean : beans) {
       writeDataRow(fieldInfos, startRow++, bean);
     }
-
-    return startRow - 1;
   }
 
   private <T, K> void writeDataRow(Map<K, FieldInfo> fieldInfos, int rowIndex, T bean) {
@@ -313,7 +305,7 @@ public class Xlsx implements Closeable {
   }
 
   private Map<XlsxTitle, FieldInfo> createFieldInfoMap(
-          List<XlsxTitle> titleInfos, XlsxOptionFrom optionFrom) {
+      List<XlsxTitle> titleInfos, XlsxOptionFrom optionFrom) {
     Map<XlsxTitle, FieldInfo> fieldInfos = new LinkedHashMap<>();
 
     for (val f : titleInfos) {
@@ -360,7 +352,7 @@ public class Xlsx implements Closeable {
   }
 
   private void prepareFieldInfos(
-          Map<XlsxTitle, FieldInfo> fieldInfos, XlsxTitle field, XlsxOptionFrom optionFrom) {
+      Map<XlsxTitle, FieldInfo> fieldInfos, XlsxTitle field, XlsxOptionFrom optionFrom) {
     FieldInfo fi = new FieldInfo();
     FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
     fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(field.title());
@@ -379,11 +371,7 @@ public class Xlsx implements Closeable {
   }
 
   private <T> FieldInfo getFirstFieldInfo(Map<T, FieldInfo> fieldInfos) {
-    if (fieldInfos.isEmpty()) {
-      return null;
-    }
-
-    return fieldInfos.values().iterator().next();
+    return fieldInfos.isEmpty() ? null : fieldInfos.values().iterator().next();
   }
 
   @SneakyThrows
