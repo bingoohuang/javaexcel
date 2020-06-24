@@ -11,9 +11,9 @@ import java.util.*;
 
 @Slf4j
 @UtilityClass
-class ValidateUtil {
+public class XlsxValidates {
   @SuppressWarnings("unchecked")
-  public String validate(OptionTo optionTo, Object obj) {
+  public String validate(XlsxOptionTo optionTo, Object obj) {
     if (obj == null) {
       return null;
     }
@@ -77,7 +77,7 @@ class ValidateUtil {
   private String parseFieldName(String fieldName, List<Field> fields) {
     for (Field f : fields) {
       if (f.getName().equals(fieldName) && f.isAnnotationPresent(XlsxCol.class)) {
-        return Util.getTitle(f.getAnnotation(XlsxCol.class));
+        return XlsxUtil.getTitle(f.getAnnotation(XlsxCol.class));
       }
     }
 

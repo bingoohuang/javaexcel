@@ -1,5 +1,9 @@
-package com.github.gobars.xlsx;
+package com.github.gobars.xlsxtest;
 
+import com.github.gobars.xlsx.XlsxOptionFrom;
+import com.github.gobars.xlsx.XlsxTitle;
+import com.github.gobars.xlsx.Xlsx;
+import com.github.gobars.xlsx.XlsxCol;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.junit.Test;
@@ -7,9 +11,9 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.gobars.xlsx.FileType.CLASSPATH;
-import static com.github.gobars.xlsx.Util.listOf;
-import static com.github.gobars.xlsx.Util.mapOf;
+import static com.github.gobars.xlsx.XlsxFileType.CLASSPATH;
+import static com.github.gobars.xlsx.XlsxUtil.listOf;
+import static com.github.gobars.xlsx.XlsxUtil.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class TemplateTest {
@@ -38,7 +42,7 @@ public class TemplateTest {
 
     new Xlsx()
         .read("template-horizontal.xlsx", CLASSPATH)
-        .fromBeans(bs, new OptionFrom().horizontal(true))
+        .fromBeans(bs, new XlsxOptionFrom().horizontal(true))
         .write("excels/test-horizontal.xlsx");
 
     List<HorizontalBean> read =
@@ -50,12 +54,12 @@ public class TemplateTest {
             new HorizontalBean().area("东城").blood("140/95").gender("女").school("西大"),
             new HorizontalBean().area("南城").blood("133/85").gender("未知").school("北大"));
 
-    List<TitleInfo> titleInfos =
+    List<XlsxTitle> titleInfos =
         listOf(
-            new TitleInfo().title("地区").mapKey("area"),
-            new TitleInfo().title("性别").mapKey("gender"),
-            new TitleInfo().title("学校").mapKey("school"),
-            new TitleInfo().title("血压").mapKey("blood"));
+            new XlsxTitle().title("地区").mapKey("area"),
+            new XlsxTitle().title("性别").mapKey("gender"),
+            new XlsxTitle().title("学校").mapKey("school"),
+            new XlsxTitle().title("血压").mapKey("blood"));
 
     List<Map<String, String>> maps =
         new Xlsx().read("excels/test-horizontal.xlsx").toBeans(titleInfos);
@@ -68,7 +72,7 @@ public class TemplateTest {
 
     new Xlsx()
         .read("template-horizontal.xlsx", CLASSPATH)
-        .fromBeans(bs, new OptionFrom().horizontal(true))
+        .fromBeans(bs, new XlsxOptionFrom().horizontal(true))
         .protect("123456")
         .write("excels/test-horizontal-123456.xlsx");
 

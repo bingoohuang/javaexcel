@@ -61,7 +61,7 @@ public void horizontal() {
 
     new Xlsx()
         .read("template-horizontal.xlsx", FileType.CLASSPATH)
-        .fromBeans(beans, new FromOption().horizontal(true))
+        .fromBeans(beans, new XlsxOptionFrom().horizontal(true))
         .write("excels/test-horizontal.xlsx");
 }
 
@@ -133,21 +133,21 @@ XlsxValidatable<Map<String, String>> validatable =
       return "性别格式错误，必须为男或女";
     };
 
-XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
+XlsxIgnoreable<Map<String, String>> ignoreable =
     bean -> Util.contains(bean.get("area"), "示例-");
 
-ToOption optionTo =
-    new ToOption()
+XlsOptionTo optionTo =
+    new XlsOptionTo()
         // 将错误标识在Excel行末
         .writeErrorToExcel(true)
-        .ignoreCallback(ignoreCallback)
+        .ignoreable(ignoreable)
         // 校验回调
         .validatable(validatable);
 
-List<TitleInfo> titleInfos =
-    TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+List<XlsxTitle> titles =
+    XlsxTitle.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
 
-List<Map<String, String>> maps = xlsx.toBeans(titleInfos, optionTo);
+List<Map<String, String>> maps = xlsx.toBeans(titles, optionTo);
 xlsx.write("excels/test-validate-map.xlsx");
 ```
 

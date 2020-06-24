@@ -5,16 +5,16 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(fluent = true)
-public class OptionTo {
+public class XlsxOptionTo {
   private int okRows;
   private int errRows;
 
-  private XlsxValidErrCallback errCallback;
+  private XlsxValidErrable errable;
 
   private boolean writeErrorToExcel;
   private boolean removeOkRows;
 
-  private XlsxIgnoreCallback ignoreCallback;
+  private XlsxIgnoreable ignoreable;
 
   private XlsxValidatable validatable;
 }

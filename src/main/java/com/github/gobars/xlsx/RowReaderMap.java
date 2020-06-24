@@ -8,8 +8,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.util.HashMap;
 import java.util.Map;
 
-class RowReaderMap extends RowReader<Map<String, String>, TitleInfo> {
-  public RowReaderMap(Workbook workbook, Map<TitleInfo, FieldInfo> fieldInfos) {
+class RowReaderMap extends RowReader<Map<String, String>, XlsxTitle> {
+  public RowReaderMap(Workbook workbook, Map<XlsxTitle, FieldInfo> fieldInfos) {
     super(workbook, fieldInfos);
   }
 
@@ -19,7 +19,7 @@ class RowReaderMap extends RowReader<Map<String, String>, TitleInfo> {
   }
 
   @Override
-  public boolean readRow(Map<String, String> map, Row row, OptionTo optionTo) {
+  public boolean readRow(Map<String, String> map, Row row, XlsxOptionTo optionTo) {
     for (val entry : fieldInfos.entrySet()) {
       Cell cell = row.getCell(entry.getValue().index());
       if (cell == null) {

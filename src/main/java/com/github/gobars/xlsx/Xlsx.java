@@ -45,7 +45,7 @@ public class Xlsx implements Closeable {
    * @param fileType 样式文件类型
    * @return Xlsx
    */
-  public Xlsx style(String fileName, FileType fileType) {
+  public Xlsx style(String fileName, XlsxFileType fileType) {
     this.styleWorkbook = XlsxReader.read(fileName, fileType);
     return this;
   }
@@ -60,10 +60,10 @@ public class Xlsx implements Closeable {
    */
   @SneakyThrows
   public Xlsx fromBeans(
-      List<TitleInfo> titleInfos, List<Map<String, String>> maps, OptionFrom... options) {
+          List<XlsxTitle> titleInfos, List<Map<String, String>> maps, XlsxOptionFrom... options) {
     getSheet();
 
-    val option = options.length > 0 ? options[0] : new OptionFrom();
+    val option = options.length > 0 ? options[0] : new XlsxOptionFrom();
     val fieldInfos = createFieldInfoMap(titleInfos, option);
 
     return writeInternal(maps, option, fieldInfos);
@@ -78,17 +78,17 @@ public class Xlsx implements Closeable {
    * @return Xlsx
    */
   @SneakyThrows
-  public <T> Xlsx fromBeans(List<T> beans, OptionFrom... optionFroms) {
+  public <T> Xlsx fromBeans(List<T> beans, XlsxOptionFrom... optionFroms) {
     getSheet();
 
-    val option = optionFroms.length > 0 ? optionFroms[0] : new OptionFrom();
+    val option = optionFroms.length > 0 ? optionFroms[0] : new XlsxOptionFrom();
     val beanClass = beans.get(0).getClass();
     val fieldInfos = createFieldInfoMap(beanClass);
 
     return writeInternal(beans, option, fieldInfos);
   }
 
-  private <T, K> Xlsx writeInternal(List<T> maps, OptionFrom option, Map<K, FieldInfo> fieldInfos) {
+  private <T, K> Xlsx writeInternal(List<T> maps, XlsxOptionFrom option, Map<K, FieldInfo> fieldInfos) {
     int rowIndex = 0;
     if (option.horizontal()) {
       rowIndex = writeHorizontal(fieldInfos, maps);
@@ -135,7 +135,7 @@ public class Xlsx implements Closeable {
       return ((Field) key).get(bean);
     }
 
-    val ti = (TitleInfo) key;
+    val ti = (XlsxTitle) key;
     val map = (Map<String, String>) bean;
     return map.get(ti.mapKey());
   }
@@ -312,9 +312,9 @@ public class Xlsx implements Closeable {
     return fieldInfos;
   }
 
-  private Map<TitleInfo, FieldInfo> createFieldInfoMap(
-      List<TitleInfo> titleInfos, OptionFrom optionFrom) {
-    Map<TitleInfo, FieldInfo> fieldInfos = new LinkedHashMap<>();
+  private Map<XlsxTitle, FieldInfo> createFieldInfoMap(
+          List<XlsxTitle> titleInfos, XlsxOptionFrom optionFrom) {
+    Map<XlsxTitle, FieldInfo> fieldInfos = new LinkedHashMap<>();
 
     for (val f : titleInfos) {
       prepareFieldInfos(fieldInfos, f, optionFrom);
@@ -325,8 +325,8 @@ public class Xlsx implements Closeable {
 
   private void prepareFieldInfos(Map<Field, FieldInfo> fieldInfos, Field field) {
     val xlsxCol = field.getAnnotation(XlsxCol.class);
-    val title = Util.getTitle(xlsxCol);
-    if (Util.isEmpty(title)) {
+    val title = XlsxUtil.getTitle(xlsxCol);
+    if (XlsxUtil.isEmpty(title)) {
       return;
     }
 
@@ -343,7 +343,7 @@ public class Xlsx implements Closeable {
     }
 
     String titleStyle = xlsxCol.titleStyle();
-    if (Util.isNotEmpty(titleStyle)) {
+    if (XlsxUtil.isNotEmpty(titleStyle)) {
       fi.titleStyle(cloneCellStyle(titleStyle));
     } else if (firstFi != null) {
       // 继承第一个注解的样式
@@ -351,7 +351,7 @@ public class Xlsx implements Closeable {
     }
 
     String dataStyle = xlsxCol.dataStyle();
-    if (Util.isNotEmpty(dataStyle)) {
+    if (XlsxUtil.isNotEmpty(dataStyle)) {
       fi.dataStyle(cloneCellStyle(dataStyle));
     } else if (firstFi != null) {
       // 继承第一个注解的样式
@@ -360,7 +360,7 @@ public class Xlsx implements Closeable {
   }
 
   private void prepareFieldInfos(
-      Map<TitleInfo, FieldInfo> fieldInfos, TitleInfo field, OptionFrom optionFrom) {
+          Map<XlsxTitle, FieldInfo> fieldInfos, XlsxTitle field, XlsxOptionFrom optionFrom) {
     FieldInfo fi = new FieldInfo();
     FieldInfo firstFi = getFirstFieldInfo(fieldInfos);
     fi.index(firstFi == null ? 0 : firstFi.index() + fieldInfos.size()).title(field.title());
@@ -368,11 +368,11 @@ public class Xlsx implements Closeable {
     fieldInfos.put(field, fi);
 
     if (optionFrom != null) {
-      if (Util.isNotEmpty(optionFrom.titleStyle())) {
+      if (XlsxUtil.isNotEmpty(optionFrom.titleStyle())) {
         fi.titleStyle(cloneCellStyle(optionFrom.titleStyle()));
       }
 
-      if (Util.isNotEmpty(optionFrom.dataStyle())) {
+      if (XlsxUtil.isNotEmpty(optionFrom.dataStyle())) {
         fi.dataStyle(cloneCellStyle(optionFrom.dataStyle()));
       }
     }
@@ -436,7 +436,7 @@ public class Xlsx implements Closeable {
    * @param optionTos 选项，只能0个或者1个
    * @return Map列表
    */
-  public List<Map<String, String>> toBeans(List<TitleInfo> titleInfos, OptionTo... optionTos) {
+  public List<Map<String, String>> toBeans(List<XlsxTitle> titleInfos, XlsxOptionTo... optionTos) {
     val fieldInfos = createFieldInfoMap(titleInfos, null);
 
     return new RowReaderMap(workbook, fieldInfos).toBeans(this, null, optionTos);
@@ -451,7 +451,7 @@ public class Xlsx implements Closeable {
    * @return JavaBean列表
    */
   @SneakyThrows
-  public <T> List<T> toBeans(Class<T> beanClass, OptionTo... optionTos) {
+  public <T> List<T> toBeans(Class<T> beanClass, XlsxOptionTo... optionTos) {
     val fieldInfos = createFieldInfoMap(beanClass);
 
     XlsxValid xv = beanClass.getAnnotation(XlsxValid.class);
@@ -471,7 +471,7 @@ public class Xlsx implements Closeable {
    * @return Xlsx
    */
   public Xlsx protect(String password) {
-    if (Util.isEmpty(password)) {
+    if (XlsxUtil.isEmpty(password)) {
       throw new XlsxException("password should not be empty");
     }
 
@@ -540,7 +540,7 @@ public class Xlsx implements Closeable {
    * @param fileType 文件类型
    * @return Xlsx
    */
-  public Xlsx read(String fileName, FileType fileType) {
+  public Xlsx read(String fileName, XlsxFileType fileType) {
     this.workbook = XlsxReader.read(fileName, fileType);
     return this;
   }
@@ -552,7 +552,7 @@ public class Xlsx implements Closeable {
    * @return Xlsx
    */
   public Xlsx read(String fileName) {
-    return read(fileName, FileType.NORMAL);
+    return read(fileName, XlsxFileType.NORMAL);
   }
 
   /**
@@ -568,8 +568,8 @@ public class Xlsx implements Closeable {
 
   @Override
   public void close() {
-    Util.closeQuietly(this.workbook);
-    Util.closeQuietly(this.styleWorkbook);
+    XlsxUtil.closeQuietly(this.workbook);
+    XlsxUtil.closeQuietly(this.styleWorkbook);
     this.workbook = null;
     this.styleWorkbook = null;
     this.sheet = null;

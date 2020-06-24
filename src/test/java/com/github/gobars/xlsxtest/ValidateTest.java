@@ -1,5 +1,6 @@
-package com.github.gobars.xlsx;
+package com.github.gobars.xlsxtest;
 
+import com.github.gobars.xlsx.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.hibernate.validator.constraints.Length;
@@ -11,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.gobars.xlsx.FileType.CLASSPATH;
-import static com.github.gobars.xlsx.Util.mapOf;
+import static com.github.gobars.xlsx.XlsxFileType.CLASSPATH;
+import static com.github.gobars.xlsx.XlsxUtil.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class ValidateTest {
@@ -30,24 +31,24 @@ public class ValidateTest {
 
           return "性别格式错误，必须为男或女";
         };
-    XlsxValidErrCallback<Map<String, String>> errCallback =
+    XlsxValidErrable<Map<String, String>> errable =
         (xBean, errMsg, rownum) -> {
           errRownums.add(rownum);
         };
-    XlsxIgnoreCallback<Map<String, String>> ignoreCallback =
-        map -> Util.contains(map.get("area"), "示例-");
+    XlsxIgnoreable<Map<String, String>> ignoreable =
+        map -> XlsxUtil.contains(map.get("area"), "示例-");
 
-    OptionTo optionTo =
-        new OptionTo()
+    XlsxOptionTo optionTo =
+        new XlsxOptionTo()
             // 将错误标识在Excel行末
             .writeErrorToExcel(true)
-            .errCallback(errCallback)
-            .ignoreCallback(ignoreCallback)
+            .errable(errable)
+            .ignoreable(ignoreable)
             // 校验回调
             .validatable(validatable);
 
-    List<TitleInfo> titleInfos =
-        TitleInfo.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+    List<XlsxTitle> titleInfos =
+        XlsxTitle.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
 
     List<Map<String, String>> maps = xlsx.toBeans(titleInfos, optionTo);
     assertThat(maps)
@@ -67,10 +68,10 @@ public class ValidateTest {
     List<Integer> errRownums = new ArrayList<>();
 
     Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
-    OptionTo optionTo =
-        new OptionTo()
-            .errCallback(
-                (XlsxValidErrCallback<XBean>)
+    XlsxOptionTo optionTo =
+        new XlsxOptionTo()
+            .errable(
+                (XlsxValidErrable<XBean>)
                     (xBean, errMsg, rownum) -> {
                       errRownums.add(rownum);
                     });
@@ -89,10 +90,10 @@ public class ValidateTest {
   @Test
   public void test() {
     VBean vb = new VBean().name("Bb1");
-    assertThat(ValidateUtil.validate(null, vb)).isNull();
+    assertThat(XlsxValidates.validate(null, vb)).isNull();
 
     vb = new VBean();
-    assertThat(ValidateUtil.validate(null, vb)).isEqualTo("姓名格式错误");
+    assertThat(XlsxValidates.validate(null, vb)).isEqualTo("姓名格式错误");
   }
 
   @XlsxValid(writeErrorToExcel = true, removeOKRows = true)

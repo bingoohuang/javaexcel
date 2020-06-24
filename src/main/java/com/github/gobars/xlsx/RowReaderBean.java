@@ -25,7 +25,7 @@ class RowReaderBean<T> extends RowReader<T, Field> {
 
   @Override
   @SneakyThrows
-  public boolean readRow(T t, Row row, OptionTo optionTo) {
+  public boolean readRow(T t, Row row, XlsxOptionTo optionTo) {
     for (val entry : fieldInfos.entrySet()) {
       Cell cell = row.getCell(entry.getValue().index());
       if (cell == null) {
@@ -34,7 +34,7 @@ class RowReaderBean<T> extends RowReader<T, Field> {
 
       String s = cell.getStringCellValue();
       String ignoreRow = entry.getValue().ignoreRow();
-      if (Util.isNotEmpty(ignoreRow) && Util.contains(s, ignoreRow)) {
+      if (XlsxUtil.isNotEmpty(ignoreRow) && XlsxUtil.contains(s, ignoreRow)) {
         return false;
       }
 

@@ -13,7 +13,7 @@ import java.io.InputStream;
 @UtilityClass
 public class XlsxReader {
   @SneakyThrows
-  public Workbook read(String fileName, FileType fileType) {
+  public Workbook read(String fileName, XlsxFileType fileType) {
     switch (fileType) {
       case NORMAL:
         @Cleanup val fis = new FileInputStream(fileName);

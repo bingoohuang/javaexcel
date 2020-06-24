@@ -17,15 +17,15 @@ import java.util.Map;
  */
 @Data
 @Accessors(fluent = true)
-public class TitleInfo {
+public class XlsxTitle {
   private String title;
   private String mapKey;
 
-  public static List<TitleInfo> create(Map<String, String> map) {
-    val l = new ArrayList<TitleInfo>(map.size());
+  public static List<XlsxTitle> create(Map<String, String> map) {
+    val l = new ArrayList<XlsxTitle>(map.size());
 
     for (val i : map.entrySet()) {
-      l.add(new TitleInfo().title(i.getKey()).mapKey(i.getValue()));
+      l.add(new XlsxTitle().title(i.getKey()).mapKey(i.getValue()));
     }
 
     return l;

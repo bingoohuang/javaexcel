@@ -1,5 +1,6 @@
-package com.github.gobars.xlsx;
+package com.github.gobars.xlsxtest;
 
+import com.github.gobars.xlsx.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.junit.Test;
@@ -7,9 +8,9 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.github.gobars.xlsx.FileType.CLASSPATH;
-import static com.github.gobars.xlsx.Util.listOf;
-import static com.github.gobars.xlsx.Util.mapOf;
+import static com.github.gobars.xlsx.XlsxFileType.CLASSPATH;
+import static com.github.gobars.xlsx.XlsxUtil.listOf;
+import static com.github.gobars.xlsx.XlsxUtil.mapOf;
 import static com.google.common.truth.Truth.assertThat;
 
 public class XlsxTest {
@@ -52,9 +53,10 @@ public class XlsxTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void fromMaps() {
-    List<TitleInfo> titleInfos =
-        TitleInfo.create(Util.mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+    List<XlsxTitle> titleInfos =
+        XlsxTitle.create(XlsxUtil.mapOf("地区", "area", "性别", "gender", "血压", "blood"));
 
     List<Map<String, String>> maps =
         listOf(
@@ -65,11 +67,11 @@ public class XlsxTest {
 
     new Xlsx()
         .style("rowsbean2-style.xlsx", CLASSPATH)
-        .fromBeans(titleInfos, maps, new OptionFrom().titleStyle("A1").dataStyle("A2"))
+        .fromBeans(titleInfos, maps, new XlsxOptionFrom().titleStyle("A1").dataStyle("A2"))
         .write("excels/test-fromMaps.xlsx");
 
-    List<TitleInfo> titleInfos2 =
-        TitleInfo.create(Util.mapOf("城市", "area", "姓名", "blood", "性别", "gender"));
+    List<XlsxTitle> titleInfos2 =
+        XlsxTitle.create(XlsxUtil.mapOf("城市", "area", "姓名", "blood", "性别", "gender"));
     new Xlsx()
         .read("template.xlsx", CLASSPATH)
         .fromBeans(titleInfos2, maps)

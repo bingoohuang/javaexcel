@@ -1,6 +1,6 @@
 package com.github.gobars.xlsx;
 
-public enum FileType {
+public enum XlsxFileType {
   /**
    * 类路径中的文件.
    *

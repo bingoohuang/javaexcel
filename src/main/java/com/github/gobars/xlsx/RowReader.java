@@ -28,11 +28,11 @@ class RowReader<T, K> {
     return null;
   }
 
-  public boolean readRow(T t, Row row, OptionTo optionTo) {
+  public boolean readRow(T t, Row row, XlsxOptionTo optionTo) {
     return false;
   }
 
-  public List<T> toBeans(Xlsx x, XlsxValid xv, OptionTo[] optionTos) {
+  public List<T> toBeans(Xlsx x, XlsxValid xv, XlsxOptionTo[] optionTos) {
     ArrayList<T> beans = new ArrayList<>(10);
 
     val sh = x.getSheet();
@@ -40,7 +40,7 @@ class RowReader<T, K> {
     int errColNum = sh.getRow(startRow).getLastCellNum();
 
     val okRows = new ArrayList<Integer>();
-    OptionTo optionTo = createToOption(optionTos);
+    XlsxOptionTo optionTo = createToOption(optionTos);
     int errRows = 0;
 
     boolean tempAutoClose = x.autoClose;
@@ -50,7 +50,7 @@ class RowReader<T, K> {
       Row row = sh.getRow(i);
 
       if (readRow(t, row, optionTo) && !shouldIgnore(optionTo, t)) {
-        String errMsg = ValidateUtil.validate(optionTo, t);
+        String errMsg = XlsxValidates.validate(optionTo, t);
         if (errMsg == null) {
           okRows.add(i);
           beans.add(t);
@@ -66,7 +66,7 @@ class RowReader<T, K> {
     }
 
     if (removeOkRows(xv, okRows, optionTo)) {
-      Poi.removeRows(sh, okRows);
+      XlsxUtil.removeRows(sh, okRows);
       x.autoClose(false);
     }
 
@@ -82,30 +82,30 @@ class RowReader<T, K> {
   }
 
   @SuppressWarnings("unchecked")
-  private boolean shouldIgnore(OptionTo optionTo, T t) {
-    val cb = optionTo.ignoreCallback();
+  private boolean shouldIgnore(XlsxOptionTo optionTo, T t) {
+    val cb = optionTo.ignoreable();
 
     return cb != null && cb.shouldIgnore(t);
   }
 
-  private boolean removeOkRows(XlsxValid xv, ArrayList<Integer> okRows, OptionTo optionTo) {
+  private boolean removeOkRows(XlsxValid xv, ArrayList<Integer> okRows, XlsxOptionTo optionTo) {
     return !okRows.isEmpty() && (optionTo.removeOkRows() || xv != null && xv.removeOKRows());
   }
 
-  private boolean writeErrorToExcel(XlsxValid xv, OptionTo optionTo) {
+  private boolean writeErrorToExcel(XlsxValid xv, XlsxOptionTo optionTo) {
     return optionTo.writeErrorToExcel() || xv != null && xv.writeErrorToExcel();
   }
 
   @SuppressWarnings("unchecked")
-  private void errCallback(OptionTo optionTo, T t, String errMsg, int rownum) {
-    if (optionTo.errCallback() != null) {
-      optionTo.errCallback().call(t, errMsg, rownum);
+  private void errCallback(XlsxOptionTo optionTo, T t, String errMsg, int rownum) {
+    if (optionTo.errable() != null) {
+      optionTo.errable().call(t, errMsg, rownum);
     }
   }
 
-  private OptionTo createToOption(OptionTo[] optionTos) {
+  private XlsxOptionTo createToOption(XlsxOptionTo[] optionTos) {
     if (optionTos.length == 0) {
-      return new OptionTo();
+      return new XlsxOptionTo();
     }
 
     return optionTos[0];

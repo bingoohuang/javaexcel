@@ -4,8 +4,9 @@ package com.github.gobars.xlsx;
  * 校验错误回调.
  *
  * @param <T> JavaBean类型.
+ * @author bingoobjca
  */
-public interface XlsxValidErrCallback<T> {
+public interface XlsxValidErrable<T> {
   /**
    * 错误回调.
    *

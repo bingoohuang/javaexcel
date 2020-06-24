@@ -2,16 +2,18 @@ package com.github.gobars.xlsx;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.poi.ss.usermodel.Sheet;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
+
+import static java.util.Comparator.reverseOrder;
 
 @Slf4j
 @UtilityClass
-class Util {
+public class XlsxUtil {
   public boolean isEmpty(String s) {
     return s == null || s.length() == 0;
   }
@@ -35,7 +37,7 @@ class Util {
       return "";
     }
 
-    if (Util.isNotEmpty(xlsxCol.title())) {
+    if (isNotEmpty(xlsxCol.title())) {
       return xlsxCol.title();
     }
 
@@ -46,11 +48,13 @@ class Util {
     return s != null && s.contains(sub);
   }
 
-  public <T> ArrayList<T> listOf(T... values) {
+  @SuppressWarnings("unchecked")
+  public <T> List<T> listOf(T... values) {
     return new ArrayList<>(Arrays.asList(values));
   }
 
-  public <T> HashMap<T, T> mapOf(T... values) {
+  @SuppressWarnings("unchecked")
+  public <T> Map<T, T> mapOf(T... values) {
     HashMap<T, T> m = new HashMap<>(values.length / 2 + 1);
 
     for (int i = 0; i < values.length; i += 2) {
@@ -58,5 +62,24 @@ class Util {
     }
 
     return m;
+  }
+
+  public void removeRows(Sheet sheet, List<Integer> rows) {
+    rows.stream().sorted(reverseOrder()).forEach(r -> removeRow(sheet, r));
+  }
+
+  public void removeRow(Sheet sheet, int rowIndex) {
+    val lastRowNum = sheet.getLastRowNum();
+    if (rowIndex >= 0 && rowIndex < lastRowNum) {
+      sheet.shiftRows(rowIndex + 1, lastRowNum, -1);
+      return;
+    }
+
+    if (rowIndex == lastRowNum) {
+      val r = sheet.getRow(rowIndex);
+      if (r != null) {
+        sheet.removeRow(r);
+      }
+    }
   }
 }

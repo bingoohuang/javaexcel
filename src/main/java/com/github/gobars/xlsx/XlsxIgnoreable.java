@@ -6,7 +6,7 @@ package com.github.gobars.xlsx;
  * @param <T> Beasn类型
  * @author bingoo
  */
-public interface XlsxIgnoreCallback<T> {
+public interface XlsxIgnoreable<T> {
   /**
    * 是否忽略当前Bean.
    *
