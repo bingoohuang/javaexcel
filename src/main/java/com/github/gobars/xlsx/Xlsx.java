@@ -46,6 +46,8 @@ public class Xlsx implements Closeable {
    */
   public Xlsx style(String fileName, XlsxFileType fileType) {
     this.styleWorkbook = XlsxReader.read(fileName, fileType);
+    this.styleSheet = styleWorkbook.getSheetAt(0);
+
     return this;
   }
 
@@ -146,7 +148,7 @@ public class Xlsx implements Closeable {
   }
 
   private <K> boolean testTitleCol(int titleCol, Map<K, FieldInfo> fieldInfos) {
-    Map<K, Integer> rowIndexes = new HashMap<>(fieldInfos.size());
+    Map<K, Integer> rowIndexes = new HashMap<K, Integer>(fieldInfos.size());
 
     for (int i = 0, ii = sheet.getLastRowNum(); i <= ii; i++) {
       Row row = sheet.getRow(i);
@@ -182,7 +184,7 @@ public class Xlsx implements Closeable {
     int startRow = locateDataRowByTitle(fieldInfos);
 
     if (startRow == 0) {
-      writeTileRow(fieldInfos, sheet.createRow(startRow));
+      writeTitleRow(fieldInfos, sheet.createRow(startRow));
       startRow = 1;
     }
 
@@ -191,15 +193,7 @@ public class Xlsx implements Closeable {
     }
   }
 
-  private <T, K> void writeDataRow(Map<K, FieldInfo> fieldInfos, int rowIndex, T bean) {
-    val row = sheet.createRow(rowIndex);
-
-    for (val entry : fieldInfos.entrySet()) {
-      writeCell(row, bean, entry.getValue(), entry.getKey());
-    }
-  }
-
-  private <K> void writeTileRow(Map<K, FieldInfo> fieldInfos, Row row) {
+  private <K> void writeTitleRow(Map<K, FieldInfo> fieldInfos, Row row) {
     for (val fieldInfo : fieldInfos.entrySet()) {
       val fi = fieldInfo.getValue();
       val cell = row.createCell(fi.index());
@@ -207,6 +201,14 @@ public class Xlsx implements Closeable {
       if (fi.titleStyle() != null) {
         cell.setCellStyle(fi.titleStyle());
       }
+    }
+  }
+
+  private <T, K> void writeDataRow(Map<K, FieldInfo> fieldInfos, int rowIndex, T bean) {
+    val row = sheet.createRow(rowIndex);
+
+    for (val entry : fieldInfos.entrySet()) {
+      writeCell(row, bean, entry.getValue(), entry.getKey());
     }
   }
 
@@ -258,7 +260,7 @@ public class Xlsx implements Closeable {
   }
 
   private <T> boolean findAnyTitles(Row row, Map<T, FieldInfo> fieldInfos) {
-    Map<T, Integer> columnIndexes = new HashMap<>(fieldInfos.size());
+    Map<T, Integer> columnIndexes = new HashMap<T, Integer>(fieldInfos.size());
     for (val i : fieldInfos.entrySet()) {
       int titleColIndex = findTitleInRow(row, i.getValue().title());
       if (titleColIndex >= 0) {
@@ -294,7 +296,7 @@ public class Xlsx implements Closeable {
   }
 
   private Map<Field, FieldInfo> createFieldInfoMap(Class<?> beanClass) {
-    Map<Field, FieldInfo> fieldInfos = new LinkedHashMap<>();
+    Map<Field, FieldInfo> fieldInfos = new LinkedHashMap<Field, FieldInfo>();
 
     for (val f : beanClass.getDeclaredFields()) {
       f.setAccessible(true);
@@ -306,7 +308,7 @@ public class Xlsx implements Closeable {
 
   private Map<XlsxTitle, FieldInfo> createFieldInfoMap(
       List<XlsxTitle> titleInfos, XlsxOptionFrom optionFrom) {
-    Map<XlsxTitle, FieldInfo> fieldInfos = new LinkedHashMap<>();
+    Map<XlsxTitle, FieldInfo> fieldInfos = new LinkedHashMap<XlsxTitle, FieldInfo>();
 
     for (val f : titleInfos) {
       prepareFieldInfos(fieldInfos, f, optionFrom);
@@ -329,10 +331,6 @@ public class Xlsx implements Closeable {
         .ignoreRow(xlsxCol.ignoreRow());
 
     fieldInfos.put(field, fi);
-
-    if (styleWorkbook == null) {
-      return;
-    }
 
     String titleStyle = xlsxCol.titleStyle();
     if (XlsxUtil.isNotEmpty(titleStyle)) {
@@ -391,14 +389,24 @@ public class Xlsx implements Closeable {
 
   private CellStyle cloneCellStyle(String cellReference) {
     if (styleSheet == null) {
-      styleSheet = styleWorkbook.getSheetAt(0);
+      return null;
     }
 
     val cr = new CellReference(cellReference);
-    val style = styleSheet.getRow(cr.getRow()).getCell(cr.getCol()).getCellStyle();
-    val cloneStyle = workbook.createCellStyle();
-    cloneStyle.cloneStyleFrom(style);
-    return cloneStyle;
+    val row = styleSheet.getRow(cr.getRow());
+    if (row == null) {
+      return null;
+    }
+
+    val cell = row.getCell(cr.getCol());
+    if (cell == null) {
+      return null;
+    }
+
+    val style = workbook.createCellStyle();
+    style.cloneStyleFrom(cell.getCellStyle());
+
+    return style;
   }
 
   Sheet getSheet() {

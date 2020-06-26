@@ -33,7 +33,7 @@ class RowReader<T, K> {
   }
 
   public List<T> toBeans(Xlsx x, XlsxValid xv, XlsxOptionTo[] optionTos) {
-    ArrayList<T> beans = new ArrayList<>(10);
+    ArrayList<T> beans = new ArrayList<T>(10);
 
     val sh = x.getSheet();
     int startRow = x.locateDataRowByTitle(fieldInfos);

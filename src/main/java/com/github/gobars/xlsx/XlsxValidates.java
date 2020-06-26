@@ -50,12 +50,12 @@ public class XlsxValidates {
     }
 
     val sb = new StringBuilder();
-    Set<String> fieldNames = new HashSet<>();
+    Set<String> fieldNames = new HashSet<String>();
 
     for (val cv : set) {
       Class cls = cv.getRootBean().getClass();
       val fieldName = cv.getPropertyPath().toString();
-      val fields = new ArrayList<>(Arrays.asList(cls.getDeclaredFields()));
+      val fields = new ArrayList<Field>(Arrays.asList(cls.getDeclaredFields()));
       if (cls.getSuperclass() != null) {
         fields.addAll(Arrays.asList(cls.getSuperclass().getDeclaredFields()));
       }

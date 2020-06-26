@@ -11,8 +11,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 
-import static java.util.Comparator.reverseOrder;
-
 @Slf4j
 @UtilityClass
 public class XlsxUtil {
@@ -58,12 +56,12 @@ public class XlsxUtil {
 
   @SuppressWarnings("unchecked")
   public <T> List<T> listOf(T... values) {
-    return new ArrayList<>(Arrays.asList(values));
+    return new ArrayList<T>(Arrays.asList(values));
   }
 
   @SuppressWarnings("unchecked")
   public <T> Map<T, T> mapOf(T... values) {
-    HashMap<T, T> m = new HashMap<>(values.length / 2 + 1);
+    HashMap<T, T> m = new HashMap<T, T>(values.length / 2 + 1);
 
     for (int i = 0; i < values.length; i += 2) {
       m.put(values[i], values[i + 1]);
@@ -73,7 +71,10 @@ public class XlsxUtil {
   }
 
   public void removeRows(Sheet sheet, List<Integer> rows) {
-    rows.stream().sorted(reverseOrder()).forEach(r -> removeRow(sheet, r));
+    Collections.sort(rows, Collections.reverseOrder());
+    for (val r : rows) {
+      removeRow(sheet, r);
+    }
   }
 
   public void removeRow(Sheet sheet, int rowIndex) {
@@ -131,5 +132,21 @@ public class XlsxUtil {
 
       return null;
     }
+  }
+
+  /**
+   * Test if s is any of element in the values.
+   *
+   * @param s tested one.
+   * @param values list of values
+   * @param <T> s type.
+   * @return true if s is one of the values.
+   */
+  public <T> boolean anyOf(T s, T... values) {
+    for (val i : values) {
+      if (s.equals(i)) return true;
+    }
+
+    return false;
   }
 }

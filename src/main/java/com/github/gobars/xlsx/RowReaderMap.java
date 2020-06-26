@@ -15,7 +15,7 @@ class RowReaderMap extends RowReader<Map<String, String>, XlsxTitle> {
 
   @Override
   public Map<String, String> newInstance() {
-    return new HashMap<>();
+    return new HashMap<String, String>();
   }
 
   @Override

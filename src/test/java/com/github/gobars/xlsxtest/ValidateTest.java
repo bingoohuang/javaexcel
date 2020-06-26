@@ -3,6 +3,7 @@ package com.github.gobars.xlsxtest;
 import com.github.gobars.xlsx.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import lombok.val;
 import org.hibernate.validator.constraints.Length;
 import org.junit.Test;
 
@@ -19,72 +20,85 @@ import static com.google.common.truth.Truth.assertThat;
 public class ValidateTest {
   @Test
   public void readExcel2Maps() {
-    List<Integer> errRownums = new ArrayList<>();
-    Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
+    val errRownums = new ArrayList<Integer>();
 
-    XlsxValidatable<Map<String, String>> validatable =
-        (lastError, map) -> {
-          String gender = map.get("gender");
-          if ("男".equals(gender) || "女".equals(gender)) {
-            return null;
+    val validatable =
+        new XlsxValidatable<Map<String, String>>() {
+          @Override
+          public String validate(String lastError, Map<String, String> map) {
+            val s = new StringBuilder();
+            if (!XlsxUtil.anyOf(map.get("gender"), "男", "女")) {
+              s.append("性别格式错误，必须为男或女");
+            }
+
+            if (!XlsxUtil.anyOf(map.get("area"), "东城", "西城")) {
+              s.append(s.length() > 0 ? "; " : "").append("地区只能是东城或西城");
+            }
+
+            return s.length() == 0 ? null : s.toString();
           }
-
-          return "性别格式错误，必须为男或女";
         };
-    XlsxValidErrable<Map<String, String>> errable =
-        (xBean, errMsg, rownum) -> {
-          errRownums.add(rownum);
+    val errable =
+        new XlsxValidErrable<Map<String, String>>() {
+          @Override
+          public void call(Map<String, String> xBean, String errMsg, int rownum) {
+            errRownums.add(rownum);
+          }
         };
-    XlsxIgnoreable<Map<String, String>> ignoreable =
-        map -> XlsxUtil.contains(map.get("area"), "示例-");
-
-    XlsxOptionTo optionTo =
+    val ignoreable =
+        new XlsxIgnoreable<Map<String, String>>() {
+          @Override
+          public boolean shouldIgnore(Map<String, String> map) {
+            return XlsxUtil.contains(map.get("area"), "示例-");
+          }
+        };
+    val optionTo =
         new XlsxOptionTo()
-            // 将错误标识在Excel行末
-            .writeErrorToExcel(true)
-            .errable(errable)
+            .writeErrorToExcel(true) // 将错误消息写回Excel对应行的最后一列
             .ignoreable(ignoreable)
-            // 校验回调
-            .validatable(validatable);
+            .validatable(validatable) // 校验回调
+            .errable(errable); // 校验错误行回调
 
-    List<XlsxTitle> titleInfos =
-        XlsxTitle.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+    val titles = XlsxTitle.create(mapOf("地区", "area", "性别", "gender", "血压", "blood"));
+    val xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
 
-    List<Map<String, String>> maps = xlsx.toBeans(titleInfos, optionTo);
-    assertThat(maps)
+    assertThat(xlsx.toBeans(titles, optionTo))
         .containsExactly(
             mapOf("area", "西城", "blood", "135/90", "gender", "男"),
             mapOf("area", "东城", "blood", "140/95", "gender", "女"));
 
     xlsx.write("excels/test-validate-map.xlsx");
 
-    assertThat(errRownums).containsExactly(6);
+    assertThat(errRownums).containsExactly(6, 7);
     assertThat(optionTo.okRows()).isEqualTo(2);
-    assertThat(optionTo.errRows()).isEqualTo(1);
+    assertThat(optionTo.errRows()).isEqualTo(2);
   }
 
   @Test
   public void readExcel2Beans() {
-    List<Integer> errRownums = new ArrayList<>();
+    final List<Integer> errRownums = new ArrayList<Integer>();
 
     Xlsx xlsx = new Xlsx().read("validate.xlsx", CLASSPATH);
-    XlsxOptionTo optionTo =
+    val optionTo =
         new XlsxOptionTo()
             .errable(
-                (XlsxValidErrable<XBean>)
-                    (xBean, errMsg, rownum) -> {
-                      errRownums.add(rownum);
-                    });
+                new XlsxValidErrable<XBean>() {
+                  @Override
+                  public void call(XBean xBean, String errMsg, int rownum) {
+                    errRownums.add(rownum);
+                  }
+                });
     List<XBean> vBeans = xlsx.toBeans(XBean.class, optionTo);
     xlsx.write("excels/test-validate.xlsx");
 
     assertThat(errRownums).containsExactly(6);
-    assertThat(optionTo.okRows()).isEqualTo(2);
+    assertThat(optionTo.okRows()).isEqualTo(3);
     assertThat(optionTo.errRows()).isEqualTo(1);
     assertThat(vBeans)
         .containsExactly(
             new XBean().area("西城").blood("135/90").gender("男"),
-            new XBean().area("东城").blood("140/95").gender("女"));
+            new XBean().area("东城").blood("140/95").gender("女"),
+            new XBean().area("南城").blood("133/85").gender("男"));
   }
 
   @Test

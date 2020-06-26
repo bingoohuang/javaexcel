@@ -9,12 +9,10 @@ public class XlsxOptionTo {
   private int okRows;
   private int errRows;
 
-  private XlsxValidErrable errable;
-
+  private XlsxIgnoreable ignoreable;
+  private XlsxValidatable validatable;
   private boolean writeErrorToExcel;
   private boolean removeOkRows;
 
-  private XlsxIgnoreable ignoreable;
-
-  private XlsxValidatable validatable;
+  private XlsxValidErrable errable;
 }

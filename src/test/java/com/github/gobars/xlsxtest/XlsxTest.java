@@ -31,7 +31,7 @@ public class XlsxTest {
 
     String excel = "excels/test-rowsbean2.xlsx";
 
-    new Xlsx().style("rowsbean2-style.xlsx", CLASSPATH).fromBeans(rows).write(excel);
+    new Xlsx().style("style.xlsx", CLASSPATH).fromBeans(rows).write(excel);
 
     List<RowBean2> read = new Xlsx().read(excel).toBeans(RowBean2.class);
 
@@ -45,7 +45,7 @@ public class XlsxTest {
 
     String excel = "excels/test-fromBeans.xlsx";
 
-    new Xlsx().style("rowsbean2-style.xlsx", CLASSPATH).fromBeans(rows).write(excel);
+    new Xlsx().style("style.xlsx", CLASSPATH).fromBeans(rows).write(excel);
 
     List<RowBean3> read = new Xlsx().read(excel).toBeans(RowBean3.class);
 
@@ -66,7 +66,7 @@ public class XlsxTest {
             mapOf("area", "南城", "blood", "133/85", "gender", "未知", "school", "北大"));
 
     new Xlsx()
-        .style("rowsbean2-style.xlsx", CLASSPATH)
+        .style("style.xlsx", CLASSPATH)
         .fromBeans(titleInfos, maps, new XlsxOptionFrom().titleStyle("A1").dataStyle("A2"))
         .write("excels/test-fromMaps.xlsx");
 
