@@ -144,7 +144,9 @@ public class XlsxUtil {
    */
   public <T> boolean anyOf(T s, T... values) {
     for (val i : values) {
-      if (s.equals(i)) return true;
+      if (s.equals(i)) {
+        return true;
+      }
     }
 
     return false;
