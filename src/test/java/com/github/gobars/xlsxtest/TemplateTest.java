@@ -31,6 +31,52 @@ public class TemplateTest {
     assertThat(read).isEqualTo(beans);
   }
 
+  @Data
+  @Accessors(fluent = true)
+  public static class ExportTitle {
+    @XlsxCol("标题")
+    private String title;
+
+    @XlsxCol("数据")
+    private String d;
+  }
+
+  @Test
+  public void horizontal2() {
+    // 标题行
+    List<ExportTitle> bs =
+        listOf(
+            new ExportTitle().title("地区"),
+            new ExportTitle().title("血压"),
+            new ExportTitle().title("性别"),
+            new ExportTitle().title("学校"));
+
+    // 标题行与map的key对应关系
+    List<XlsxTitle> titleInfos =
+        listOf(
+            new XlsxTitle().title("地区").mapKey("area"),
+            new XlsxTitle().title("性别").mapKey("gender"),
+            new XlsxTitle().title("学校").mapKey("school"),
+            new XlsxTitle().title("血压").mapKey("blood"));
+
+    // map形式的数据
+    List<Map<String, String>> maps =
+        listOf(
+            mapOf("area", "西城", "blood", "135/90", "gender", "男", "school", "东大"),
+            mapOf("area", "东城", "blood", "140/95", "gender", "女", "school", "西大"),
+            mapOf("area", "南城", "blood", "133/85", "gender", "未知", "school", "北大"),
+            mapOf("area", "北城", "blood", "135/85", "gender", "女", "school", "男大"));
+
+    new Xlsx()
+        // 加载标题行元模板
+        .read("template-horizontal2.xlsx", CLASSPATH)
+        // 横向生成标题行
+        .fromBeans(bs, new XlsxOptionFrom().horizontal(true))
+        // 纵向生成数据
+        .fromBeans(titleInfos, maps)
+        .write("excels/test-horizontal2.xlsx");
+  }
+
   @Test
   public void horizontal() {
     List<TitleBean> bs =
