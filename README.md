@@ -22,7 +22,7 @@ binding between java beans and excel rows based on poi.
 | Excel按列头写（指定样式），生成Map<String, String>列表 | `new Xlsx().style("style.xlsx", CLASSPATH).fromBeans(titles, maps, new XlsxOptionFrom().titleStyle("A1").dataStyle("A2")).write(excel)` |
 | 上传，从`@RequestParam("file") MultipartFile f`中读   | `new Xlsx().read(f.getInputStream())...`                                                                                                          |
 | 下载，向`HttpServletResponse response`中写      | `new Xlsx().fromBeans(rows).write("下载.xlsx", response)`                                                                                             |
-
+| 先生成标题行头（动态列），再写入数据（动态数据） |<code>new Xlsx()<br>// 加载标题行元模板<br>.read("template-horizontal2.xlsx", CLASSPATH)<br>// 横向生成标题行<br>.fromBeans(bs, new XlsxOptionFrom().horizontal(true))<br> // 纵向生成数据<br> .fromBeans(titleInfos, maps)<br> .write("excels/test-horizontal2.xlsx");</code>
 
 ### JavaBean读取
 
