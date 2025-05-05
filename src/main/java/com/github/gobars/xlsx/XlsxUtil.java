@@ -98,17 +98,17 @@ public class XlsxUtil {
     }
 
     switch (cell.getCellType()) {
-      case Cell.CELL_TYPE_NUMERIC:
+      case NUMERIC:
         return fmt(cell.getNumericCellValue());
-      case Cell.CELL_TYPE_BLANK:
+      case BLANK:
         return "";
-      case Cell.CELL_TYPE_BOOLEAN:
+      case BOOLEAN:
         return String.valueOf(cell.getBooleanCellValue());
-      case Cell.CELL_TYPE_FORMULA:
+      case FORMULA:
         return getFormulaValue(cell);
-      case Cell.CELL_TYPE_ERROR:
+      case ERROR:
         return FormulaError.forInt(cell.getErrorCellValue()).getString();
-      case Cell.CELL_TYPE_STRING:
+      case STRING:
       default:
         return trimToEmpty(cell.getStringCellValue());
     }

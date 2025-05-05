@@ -123,7 +123,7 @@ public class ValidateTest {
     private String blood;
 
     @XlsxCol("性别")
-    @Pattern(regexp = "男|女")
+    @Pattern(regexp = "[男女]")
     private String gender;
 
     private String error;
